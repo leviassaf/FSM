@@ -12,6 +12,7 @@ Attribute FreeRedshiftQuery.VB_ProcData.VB_Invoke_Func = "R\n14"
 '    Dim strErrorDescription As String
     Dim Sht As Worksheet
     Dim strQueryName As String
+    Dim strDSN As String
     
     msgBoxResult = vbYes
     Do While msgBoxResult = vbYes
@@ -36,7 +37,7 @@ Attribute FreeRedshiftQuery.VB_ProcData.VB_Invoke_Func = "R\n14"
 
         Set wbkReport = Workbooks.Add(xlWBATWorksheet)
         Set shtNew = wbkReport.ActiveSheet
-        Set Qry = CreateQueryTable(shtNew)
+        Set Qry = CreateQueryTable(shtNew, strDSN)
         With Qry
             .CommandText = strSqlQuery
             .AdjustColumnWidth = True

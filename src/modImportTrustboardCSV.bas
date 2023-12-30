@@ -43,8 +43,8 @@ Attribute ImportTrustboardCSV.VB_ProcData.VB_Invoke_Func = "I\n14"
     Dim strPowerQueryFormula As String
     
     strNewestFileFullName = getNewestFileFullName(strNewestFileName)
-    If Left(strNewestFileName, 4) = "guid" Then 'commented out since TB changed PUID export file name around December 14 2023
-    'If False Then
+    'If Left(strNewestFileName, 4) = "guid" Then 'commented out since TB changed PUID export file name around December 14 2023
+    If True Then
         strPowerQueryFormula = _
             "let Source = Csv.Document(File.Contents(""" & strNewestFileFullName & """),[Delimiter="","", Encoding=65001, QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]), " & _
             "#""Changed Type"" = Table.TransformColumnTypes(#""Promoted Headers"",{{""Account Id"", type text}, {""Application"", type text}, {""Browser"", type text}, {""Browser version"", type text}, {""Classification"", type text}, {""Client Language"", type text}, {""Line Carrier"", type text}, {""Country code"", type text}, {""Date & time"", type datetime}, {""Customer session IDs"", type text}, " & _

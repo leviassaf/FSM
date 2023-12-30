@@ -2,6 +2,7 @@ Attribute VB_Name = "modGetTablesForSessionId"
 Option Explicit
 
 Sub GetTablesForSessionId()
+Attribute GetTablesForSessionId.VB_ProcData.VB_Invoke_Func = "S\n14"
     Dim Qry As QueryTable
     Dim wbkReport As Workbook
     Dim shtNew As Worksheet
@@ -9,6 +10,8 @@ Sub GetTablesForSessionId()
     Dim intSqlQueryIndex As Integer
     Dim strSqlQuery As String
     Dim strSessionId As String
+    Dim strOrigin As String
+    Dim strDSN As String
     Dim msgBoxResult As VbMsgBoxResult
     
     msgBoxResult = vbYes
@@ -24,6 +27,18 @@ Sub GetTablesForSessionId()
         End If
     Loop
     
+'    strDSN = Application.InputBox("Type the DSN to extract Redshift data: ", "Session ID Analysis", "Redshift_US", Type:=2)
+    strDSN = "Redshift_EU"
+    If strDSN = "False" Or Trim(strDSN) = "" Then
+        Exit Sub
+    End If
+    
+'    strOrigin = Application.InputBox("Type the Origin to extract Redshift data: ", "Session ID Analysis", "anz", Type:=2)
+    strOrigin = "lgt"
+    If strOrigin = "False" Or Trim(strOrigin) = "" Then
+        Exit Sub
+    End If
+    
     strSessionId = Application.InputBox("Type the Session ID to extract Redshift data: ", "Session ID Analysis", "00000149470725811461", Type:=2)
     If strSessionId = "False" Or Trim(strSessionId) = "" Then
         Exit Sub
@@ -31,10 +46,21 @@ Sub GetTablesForSessionId()
     
     Application.ScreenUpdating = False
     
+'    arrSqlQueries = Array( _
+        "select * from " & strOrigin & ".policy_invocation_stats where session_id = '" & strSessionId & "' limit 10000;" _
+    )
+    
     arrSqlQueries = Array( _
-        "select * from ing.sessions_info where session_id = '" & strSessionId & "' limit 1000;", _
-        "select * from ing.policy_results where session_id = '" & strSessionId & "' limit 1000;", _
-        "select * from ing.policy_invocation_stats where session_id = '" & strSessionId & "' limit 1000;" _
+        "select * from " & strOrigin & ".sessions_info where session_id = '" & strSessionId & "' limit 10000;", _
+        "select * from " & strOrigin & ".policy_results where session_id = '" & strSessionId & "' limit 10000;", _
+        "select * from " & strOrigin & ".devices where session_id = '" & strSessionId & "' limit 10000;", _
+        "select * from " & strOrigin & ".policy_invocation_stats where session_id = '" & strSessionId & "' limit 10000;" _
+    )
+
+'    arrSqlQueries = Array( _
+        "select * from " & strOrigin & ".sessions_info where session_id = '" & strSessionId & "' limit 10000;", _
+        "select * from " & strOrigin & ".policy_results where session_id = '" & strSessionId & "' limit 10000;", _
+        "select * from " & strOrigin & ".policy_invocation_stats where session_id = '" & strSessionId & "' limit 10000;" _
     )
     
     Set wbkReport = Workbooks.Add(xlWBATWorksheet)
@@ -52,7 +78,7 @@ Sub GetTablesForSessionId()
             Set shtNew = wbkReport.ActiveSheet
             shtNew.Name = "sessions_info"
         End If
-        Set Qry = CreateQueryTable(shtNew)
+        Set Qry = CreateQueryTable(shtNew, strDSN)
         With Qry
             .CommandText = strSqlQuery
             .AdjustColumnWidth = True

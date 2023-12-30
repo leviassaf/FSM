@@ -422,7 +422,7 @@ Public Function isLANCableconnected() As Boolean
     Next
 End Function
 
-Public Function CreateQueryTable(Sht As Worksheet) As QueryTable
+Public Function CreateQueryTable(Sht As Worksheet, DSN As String) As QueryTable
     Dim Qry As QueryTable
     
     'Create the QueryTable object
@@ -430,7 +430,7 @@ Public Function CreateQueryTable(Sht As Worksheet) As QueryTable
     Case "12.0", "14.0", "15.0", "16.0":
         Set Qry = Sht.ListObjects.Add( _
             SourceType:=xlSrcExternal, _
-            source:="ODBC;DSN=Redshift_EU;", _
+            source:="ODBC;DSN=" & DSN & ";", _
             Destination:=Sht.Range("A1") _
         ).QueryTable
     Case Else
