@@ -216,7 +216,7 @@ End Function
 ' Prints out details about all VBComponents in the current project
 ' @status Production
 Public Property Get ComponentsDetails() As String
-Stop
+'Stop
     Dim index As Long
     For index = 1 To thisProjectsVBComponents.count
         Dim component As VBComponent
@@ -229,7 +229,7 @@ End Property
 ' Prints out details about all VBComponents in the current project
 ' @status Development
 Private Sub printDiffFromSourceFolder()
-Stop
+'Stop
     Dim index As Long
     For index = 1 To thisProjectsVBComponents.count
         Dim component As VBComponent

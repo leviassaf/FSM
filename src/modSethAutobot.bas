@@ -17,7 +17,7 @@ Sub LivePolicyListing()
         With rngData
             .AutoFilter
             .EntireColumn.AutoFit
-            .AutoFilter Field:=5, Criteria1:="<>0", Operator:=xlAnd, Criteria2:="<>-1"
+            .AutoFilter Field:=5, Criteria1:="<>0", Operator:=xlAnd, Criteria2:="<>-1*"
         End With
         
         With .AutoFilter.Sort

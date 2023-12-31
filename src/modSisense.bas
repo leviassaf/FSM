@@ -11,7 +11,11 @@ Sub DetectionRate()
     Columns("A:A").HorizontalAlignment = xlLeft
     
     Columns("B:D").HorizontalAlignment = xlCenter
-    Columns("D:D").style = "Percent"
+'    Columns("D:D").style = "Percent"
+    With Columns("D:D")
+        .Value2 = .Value2
+        .style = "Percent"
+    End With
 
     Call format_data_range(rngData, 4)
     

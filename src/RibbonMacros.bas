@@ -23,16 +23,16 @@ Sub runReport(ByVal control As IRibbonControl, selectedID As String, selectedInd
     
     lastRow = Log.Cells(Log.Rows.count, "A").End(xlUp).Row + 1
     
-    Select Case control.id
+    
+    Select Case control.ID
     Case "TrustboardReports"
         strList = "TrustboardReports"
     Case "AutobotReports"
         strList = "AutobotReports"
     Case "SisenseReports"
         strList = "SisenseReports"
-    Case "DbReports"
-Stop
-        strList = "SQLQueriesNames"
+'    Case "DbReports"
+'        strList = "SQLQueriesNames"
     End Select
     
     strMacro = ThisWorkbook.Names(strList).RefersToRange.Rows(CLng(selectedIndex + 1)).Value
@@ -52,23 +52,23 @@ Stop
         .Cells(lastRow, 4).Value = dtEnd - dtStart
     End With
     'Restore control to original state
-    myRibbon.InvalidateControl control.id
+    myRibbon.InvalidateControl control.ID
 End Sub
 
 'Callback for DropDown getItemCount
 Sub GetItemCount(ByVal control As IRibbonControl, ByRef count)
     Dim strList As String
     
-    Select Case control.id
+    Select Case control.ID
     Case "TrustboardReports"
         strList = "TrustboardReports"
     Case "AutobotReports"
         strList = "AutobotReports"
     Case "SisenseReports"
         strList = "SisenseReports"
-    Case "DbReports"
+'    Case "DbReports"
 'Stop
-        strList = "SQLQueriesNames"
+'        strList = "SQLQueriesNames"
     End Select
     count = ThisWorkbook.Names(strList).RefersToRange.Rows.count
 End Sub
@@ -78,16 +78,16 @@ Sub GetItemLabel(ByVal control As IRibbonControl, index As Integer, ByRef label)
     Dim rngML As Range
     Dim strList As String
     
-    Select Case control.id
+    Select Case control.ID
     Case "TrustboardReports"
         strList = "TrustboardReports"
     Case "AutobotReports"
         strList = "AutobotReports"
     Case "SisenseReports"
         strList = "SisenseReports"
-    Case "DbReports"
+'    Case "DbReports"
 'Stop
-        strList = "SQLQueriesNames"
+'        strList = "SQLQueriesNames"
     End Select
     
     Set rngML = ThisWorkbook.Names(strList).RefersToRange
@@ -97,16 +97,24 @@ End Sub
 'Callback for DropDown getSelectedItemIndex
 Sub GetSelItemIndex(ByVal control As IRibbonControl, ByRef index)
     'Ensure first item in dropdown is displayed.
-    Select Case control.id
+    Select Case control.ID
         Case Is = "TrustboardReports"
         index = 0
     Case Is = "AutobotReports"
         index = 0
     Case Is = "SisenseReports"
         index = 0
-    Case Is = "DbReports"
+'    Case Is = "DbReports"
 'Stop
-        index = 0
+'        index = 0
     Case Else
     End Select
 End Sub
+
+'Sub getEnabled(control As IRibbonControl, ByRef enabled As Variant)
+'' Sets the enabled or disabled state of the item
+'    Select Case control.ID
+'        Case "DbReports"
+'            enabled = False
+'    End Select
+'End Sub
