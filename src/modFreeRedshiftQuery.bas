@@ -115,7 +115,7 @@ Public Sub CreateChart(Sht As Worksheet)
     With MyShape.Chart
         '.PlotVisibleOnly = False
         Set chartObj = .Parent
-        .SetSourceData source:=rngSourceData
+        .SetSourceData Source:=rngSourceData
         .PlotBy = xlColumns
         
         .ChartArea.Font.Size = 12

@@ -36,7 +36,7 @@ End Function
 
 Sub ImportTrustboardCSV()
 Attribute ImportTrustboardCSV.VB_ProcData.VB_Invoke_Func = "I\n14"
-    Dim Wbk As Workbook
+    Dim wbk As Workbook
     Dim Sht As Worksheet
     Dim strNewestFileName As String
     Dim strNewestFileFullName As String
@@ -66,13 +66,13 @@ Attribute ImportTrustboardCSV.VB_ProcData.VB_Invoke_Func = "I\n14"
             "{""User Behavioral Score"", type text}, {""Risky Device"", type logical}, {""Risky Connection"", type logical}, {""Battery Charging"", type logical}, {""Behavioral Anomaly"", type text}, {""First Seen In Account"", type datetime}, " & _
             "{""First Seen In Region"", type datetime}, {""Fraud MO"", type text}, {""Agent Key"", type text}, {""Marketing Name"", type text}, {""Channel"", type text}, {""Transaction Amount"", type text}}) in #""Changed Type"""
     End If
-    Set Wbk = Workbooks.Add(xlWBATWorksheet)
+    Set wbk = Workbooks.Add(xlWBATWorksheet)
 '    ActiveWorkbook.Worksheets.Add
-    Wbk.Queries.Add Name:= _
+    wbk.Queries.Add Name:= _
         "TrustboardCSV" _
         , Formula:=strPowerQueryFormula
-    Set Sht = Wbk.ActiveSheet
-    With Sht.ListObjects.Add(SourceType:=0, source:="OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=TrustboardCSV;Extended Properties=""""", Destination:=Range("$A$1")).QueryTable
+    Set Sht = wbk.ActiveSheet
+    With Sht.ListObjects.Add(SourceType:=0, Source:="OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=TrustboardCSV;Extended Properties=""""", Destination:=Range("$A$1")).QueryTable
         .CommandType = xlCmdSql
         .CommandText = "SELECT * FROM TrustboardCSV"
         .Refresh BackgroundQuery:=False

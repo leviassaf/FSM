@@ -98,13 +98,13 @@ Private Function getVBComponentFilename(ByRef component As VBComponent) As Strin
 End Function
 
 ' Check to see if component exits in this current Project
-Private Function componentExists(ByVal filename As String) As Boolean
+Private Function componentExists(ByVal Filename As String) As Boolean
     Dim index As Long
     For index = 1 To thisProjectsVBComponents.count
         Dim component As VBComponent
         Set component = thisProjectsVBComponents(index)
         
-        If getVBComponentFilename(component) = filename Then
+        If getVBComponentFilename(component) = Filename Then
             componentExists = True
             Exit Function
         End If

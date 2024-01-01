@@ -4,7 +4,7 @@ Option Explicit
 Public Const MAX_SHEET_NAME_LENGTH As Integer = 31
 
 Sub BpceApplicationsPolicy()
-    Dim Wbk As Workbook
+    Dim wbk As Workbook
     Dim shtRawData As Worksheet
     Dim strDetectionRateFolderPath As String
     Dim strBoxPath As String
@@ -34,8 +34,8 @@ Sub BpceApplicationsPolicy()
         "in" & vbNewLine & _
         "    #""Changed Type"""
 
-    Set Wbk = Workbooks.Add(xlWBATWorksheet)
-    With Wbk
+    Set wbk = Workbooks.Add(xlWBATWorksheet)
+    With wbk
         With .Queries
             If intNumberOfSourceFiles > 1 Then 'if more than 1 source file was found
                 .Add Name:="foo report name", _
@@ -54,7 +54,7 @@ Sub BpceApplicationsPolicy()
         End With
         Set shtRawData = .ActiveSheet
         With shtRawData
-            With .ListObjects.Add(SourceType:=0, source:= _
+            With .ListObjects.Add(SourceType:=0, Source:= _
             "OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=""foo report name"";Extended Properties=""""" _
             , Destination:=Range("$A$1")).QueryTable
             .CommandType = xlCmdSql
@@ -100,7 +100,7 @@ Sub BpceApplicationsPolicy()
 '    strFileName = PrintToPDF
 Application.ScreenUpdating = True
 '    MsgBox "File is saved at:" & vbNewLine & strFileName
-    Set Wbk = Nothing
+    Set wbk = Nothing
     Set shtRawData = Nothing
 End Sub
 

@@ -430,7 +430,7 @@ Public Function CreateQueryTable(Sht As Worksheet, DSN As String) As QueryTable
     Case "12.0", "14.0", "15.0", "16.0":
         Set Qry = Sht.ListObjects.Add( _
             SourceType:=xlSrcExternal, _
-            source:="ODBC;DSN=" & DSN & ";", _
+            Source:="ODBC;DSN=" & DSN & ";", _
             Destination:=Sht.Range("A1") _
         ).QueryTable
     Case Else
@@ -620,7 +620,7 @@ Invalid:
 End Function
 
 Function CountFilesInFolder(FolderPath As String, Optional FileExtension As String = "csv") As Integer
-    Dim filename As String
+    Dim Filename As String
     Dim intFileCount As Integer
     
     ' Check if the folder path ends with a backslash, if not, add it
@@ -632,15 +632,15 @@ Function CountFilesInFolder(FolderPath As String, Optional FileExtension As Stri
     intFileCount = 0
     
     ' Get the first file in the folder
-    filename = Dir(FolderPath & "*." & FileExtension)
+    Filename = Dir(FolderPath & "*." & FileExtension)
     
     ' Loop through all files in the folder
-    Do While filename <> ""
+    Do While Filename <> ""
         ' Increment the file count
         intFileCount = intFileCount + 1
         
         ' Get the next file in the folder
-        filename = Dir()
+        Filename = Dir()
     Loop
     
     CountFilesInFolder = intFileCount
@@ -649,4 +649,16 @@ End Function
 Sub ReplaceCsvExtensionWithNone()
     Range(Range("A2"), Range("A" & Range("A1").CurrentRegion.Rows.count)).Replace What:=".csv", Replacement:="", LookAt:=xlPart, SearchOrder:=xlByRows, MatchCase:=False, SearchFormat:=False, ReplaceFormat:=False, FormulaVersion:=xlReplaceFormula2
 End Sub
+
+Public Sub CopyValues(rngData As Range, Optional Destination As Range)
+    Dim arrVariant() As Variant
+
+    If Destination Is Nothing Then
+        Set Destination = rngData.Cells(1)
+    End If
+
+    arrVariant = RangeToArray(rngData)
+    Call ArrayToRange(arrVariant, Destination.Cells(1))
+End Sub
+
 
