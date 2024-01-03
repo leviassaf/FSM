@@ -14,8 +14,18 @@ Private Const TB_COLUMN_ACTIVITY As String = "Activity"
 
 Private Const COLUMN_WEEK As String = "Week"
 Private Const COLUMN_YEAR As String = "Year"
-Private Const COLUMN_HELPER_PPSID As String = "PPSID to Sum"
-Private Const COLUMN_HELPER_PUID As String = "PUID to Sum"
+Private Const COLUMN_HELPER_PPSID_WEEK As String = "PPSID_WEEK to Sum"
+Private Const COLUMN_HELPER_PUID_WEEK As String = "PUID_WEEK to Sum"
+
+Private Const COLUMN_HELPER_PPSID_WEEK_REASONID As String = "PPSID_WEEK_REASONID to Sum"
+Private Const COLUMN_HELPER_PUID_WEEK_REASONID As String = "PUID_WEEK_REASONID to Sum"
+
+Private Const COLUMN_HELPER_PPSID_WEEK_REASONID_CLS As String = "PPSID_WEEK_REASONID_CLS to Sum"
+Private Const COLUMN_HELPER_PUID_WEEK_REASONID_CLS As String = "PUID_WEEK_REASONID_CLS to Sum"
+
+Private Const COLUMN_HELPER_PPSID_WEEK_CLS As String = "PPSID_WEEK_CLS to Sum"
+Private Const COLUMN_HELPER_PUID_WEEK_CLS As String = "PUID_WEEK_CLS to Sum"
+
 '  ********* End of Columns *********
 
 '  ********* TB Values *********
@@ -65,6 +75,7 @@ Private Const REASON_ID_19 As String = "19"
 Private Const REASON_ID_BLANK As String = "="
 
 Sub cagricole_reporting()
+Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = "C\n14"
     Dim wbk As Workbook
     Dim shtRawData As Worksheet
     Dim strDetectionRateFolderPath As String
@@ -78,7 +89,7 @@ Sub cagricole_reporting()
     Dim arrVarValuesRiskReasons() As Variant
     
     strBoxPath = Environ("UserProfile") & Application.PathSeparator & "Box" & Application.PathSeparator & "Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs"
-    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs\A"
+    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs\D"
     If strDetectionRateFolderPath = "False" Then Exit Sub
     Application.ScreenUpdating = False
     intNumberOfSourceFiles = CountFilesInFolder(strDetectionRateFolderPath)
@@ -90,7 +101,6 @@ Sub cagricole_reporting()
         " type text}, {""Status"", type text}, {""Classified At"", type datetime}, {""New Device"", type logical}, {""Activity"", type text}, {""Closed By"", type any}, {""Closed At"", type any}, {""User Agent"", type text}, {""Assigned To"", type text}, {""Phishing Url"", type any}, {""Detected At"", type text}, {""SDK Configuration"", type any}, {""SDK Version"", type any}" & _
         ", {""MRST App Count"", type any}, {""Call In Progress"", type any}, {""User Behavioral Score"", type any}, {""Risky Device"", type any}, {""Risky Connection"", type any}, {""Battery Charging"", type any}, {""Behavioral Anomaly"", type any}, {""First Seen In Account"", type datetime}, {""First Seen In Region"", type datetime}, {""Fraud MO"", type any}})" & Chr(13) & "" & Chr(10) & "in" & Chr(13) & "" & Chr(10) & "    #""Changed Type"""
     
-'    Call EnablePowerPivot
     Set wbk = Workbooks.Add(xlWBATWorksheet)
     With wbk
         With .Queries
@@ -102,9 +112,9 @@ Sub cagricole_reporting()
                 .Add Name:="Parameter1", Formula:= _
                     "#""Sample File"" meta [IsParameterQuery=true, BinaryIdentifier=#""Sample File"", Type=""Binary"", IsParameterQueryRequired=true]"
                 .Add Name:="Transform Sample File", Formula:= _
-                    "let Source = Csv.Document(Parameter1,[Delimiter="","", Columns=54, QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"""
+                    "let Source = Csv.Document(Parameter1,[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"""
                 .Add Name:="Transform File", Formula:= _
-                    "let Source = (Parameter1) => let Source = Csv.Document(Parameter1,[Delimiter="","", Columns=54, QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"" in Source"
+                    "let Source = (Parameter1) => let Source = Csv.Document(Parameter1,[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"" in Source"
             Else
                 MsgBox "Adjust VBA code to handle importing a single source file"
             End If
@@ -146,21 +156,26 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
     Dim chartObjAlertEvolution As ChartObject
     Dim rngWeeklyRRSessionCounts As Range
     Dim rngWeeklyRR_TP_RATE_SESSION As Range
+    Dim lngRowOffset As Long
+    Dim lngColOffset As Long
+    Dim Sht As Worksheet
+    Dim rngWithCalculatedItem As Range
     
-    Set Pvt = GetPivotTable(shtRawData, ReportName)
+    Set Pvt = GetPivotTable(shtRawData, ReportName) 'Create pivot table
     Set shtCustomReport = ActiveWorkbook.ActiveSheet
     shtCustomReport.Name = ReportName
 
+    'Create report "distinct PPSID/PUID by week"
     With Pvt
         .ClearTable
         .ColumnGrand = False
         .RowGrand = False
 
-        With .AddDataField(.PivotFields(COLUMN_HELPER_PPSID), "Distinct PPSID", xlSum)
+        With .AddDataField(.PivotFields(COLUMN_HELPER_PPSID_WEEK), "Distinct PPSID", xlSum)
             .NumberFormat = "#,##0"
         End With
         
-        With .AddDataField(.PivotFields(COLUMN_HELPER_PUID), "Distinct PUID", xlSum)
+        With .AddDataField(.PivotFields(COLUMN_HELPER_PUID_WEEK), "Distinct PUID", xlSum)
             .NumberFormat = "#,##0"
         End With
         
@@ -168,7 +183,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         
         .PivotFields("Year").Orientation = xlColumnField
         .PivotFields("Week").Orientation = xlColumnField
-Stop
+        
         Call RemovePivotTableSubtotals(Pvt)
         .RepeatAllLabels xlRepeatLabels
     End With
@@ -176,9 +191,11 @@ Stop
     Set shtNational = Worksheets.Add
     
     With shtNational
+        'Convert values from pivot table to the new worksheet
         Call CopyValues(Pvt.TableRange1, Destination:=.Cells(1))
         
         .Rows(1).Delete
+        'Merge cells containing same value
         Call MergeSameCells(Application.Intersect(.UsedRange, .Rows(1)))
     
         Call ChartAlertEvolution(shtNational)
@@ -189,13 +206,20 @@ Stop
     End With
     
     With Pvt
+        'Reset pivot table
         .ClearTable
         .ColumnGrand = False
         .RowGrand = False
 
-        With .AddDataField(.PivotFields("Pinpoint session ID"), "Count of Pinpoint session ID", xlCount)
+        With .AddDataField(.PivotFields(COLUMN_HELPER_PPSID_WEEK_REASONID), "Distinct PPSID", xlSum)
             .NumberFormat = "#,##0"
         End With
+        
+        With .AddDataField(.PivotFields(COLUMN_HELPER_PUID_WEEK_REASONID), "Distinct PUID", xlSum)
+            .NumberFormat = "#,##0"
+        End With
+        
+        .DataPivotField.Orientation = xlRowField
         
         .PivotFields("Year").Orientation = xlColumnField
         .PivotFields("Week").Orientation = xlColumnField
@@ -212,6 +236,14 @@ Stop
         Set rngWeeklyRRSessionCounts = .Cells(.UsedRange.SpecialCells(xlCellTypeLastCell).Row, 1).CurrentRegion
         Call MergeSameCells(rngWeeklyRRSessionCounts.Resize(1, rngWeeklyRRSessionCounts.Columns.count))
         
+        With rngWeeklyRRSessionCounts.Resize(rngWeeklyRRSessionCounts.Rows.count, 1).SpecialCells(xlCellTypeBlanks)
+            .FormulaR1C1 = "=R[-1]C"
+            rngWeeklyRRSessionCounts.Resize(rngWeeklyRRSessionCounts.Rows.count, 1).Value2 = rngWeeklyRRSessionCounts.Resize(rngWeeklyRRSessionCounts.Rows.count, 1).Value2
+
+        End With
+        
+        Call MergeSameCells(rngWeeklyRRSessionCounts.Resize(rngWeeklyRRSessionCounts.Rows.count, 1))
+        
         .UsedRange.EntireColumn.AutoFit
         
         Set rngWeeklyRR_TP_RATE_SESSION = .Cells(.UsedRange.Rows.count, 1).Offset(2)
@@ -225,13 +257,14 @@ Stop
 
         .PivotFields("Year").Orientation = xlColumnField
         .PivotFields("Week").Orientation = xlColumnField
-        .PivotFields("Classification").Orientation = xlColumnField
-        .PivotFields("Reason").Orientation = xlRowField
-        .PivotFields(StrColumnApplication).Orientation = xlPageField
         
         With .AddDataField(.PivotFields("Pinpoint session ID"), "Count of Pinpoint session ID", xlCount)
             .NumberFormat = "0%"
         End With
+        
+        .PivotFields("Classification").Orientation = xlColumnField
+        .PivotFields("Reason").Orientation = xlRowField
+        .PivotFields(StrColumnApplication).Orientation = xlPageField
         
         .PivotFields("Classification").CalculatedItems.Add "Precision", "=confirmed_fraud / (confirmed_fraud + confirmed_legitimate)", True
         .PivotFields("Classification").CalculatedItems("Precision").StandardFormula = "=confirmed_fraud / (confirmed_fraud + confirmed_legitimate)"
@@ -241,39 +274,64 @@ Stop
             .PivotItems("pending_confirmation").Visible = False
             .PivotItems("undetermined").Visible = False
         End With
-        
         Call RemovePivotTableSubtotals(Pvt)
         .RepeatAllLabels xlRepeatLabels
+        lngRowOffset = .DataBodyRange.Row - .TableRange1.Row - 1
     End With
     
-    Call CopyValues(Pvt.TableRange1, Destination:=rngWeeklyRR_TP_RATE_SESSION)
+    Call CopyValues(Pvt.TableRange1.Resize(, Pvt.TableRange1.Columns.count - 1), Destination:=rngWeeklyRR_TP_RATE_SESSION)
     
     With shtNational
-        rngWeeklyRR_TP_RATE_SESSION.EntireRow.Delete
+        With rngWeeklyRR_TP_RATE_SESSION.Cells(1)
+            .Offset(3).EntireRow.Delete
+            .EntireRow.Delete
+        End With
+        
         Set rngWeeklyRR_TP_RATE_SESSION = .Cells(.UsedRange.SpecialCells(xlCellTypeLastCell).Row, 1).CurrentRegion
+Stop
+        
+        Set rngWithCalculatedItem = rngWeeklyRR_TP_RATE_SESSION.SpecialCells(xlCellTypeConstants, 16) 'Cells with errors
+        Range("B55:B72").Delete Shift:=xlToLeft
+        
         Call MergeSameCells(rngWeeklyRR_TP_RATE_SESSION.Resize(1, rngWeeklyRR_TP_RATE_SESSION.Columns.count))
     End With
     
+    Set rngWeeklyRR_TP_RATE_SESSION = rngWeeklyRR_TP_RATE_SESSION.CurrentRegion
+    With rngWeeklyRR_TP_RATE_SESSION.Offset(lngRowOffset).Resize(rngWeeklyRR_TP_RATE_SESSION.Rows.count - lngRowOffset)
+        .NumberFormat = "0%"
+    End With
 '''''''''''
-'Stop
     With Pvt
         .ClearTable
         .ColumnGrand = True
         .RowGrand = False
 
-        '.PivotFields.GetMeasure "[Range].[Pinpoint session ID]", xlCount, "Count of Pinpoint session ID"
-        .AddDataField .PivotFields("Pinpoint session ID"), "Count of Pinpoint session ID"
-
+        With .AddDataField(.PivotFields(COLUMN_HELPER_PPSID_WEEK_REASONID), "Distinct PPSID", xlSum)
+            .NumberFormat = "#,##0"
+        End With
+        
+        With .AddDataField(.PivotFields(COLUMN_HELPER_PUID_WEEK_REASONID), "Distinct PUID", xlSum)
+            .NumberFormat = "#,##0"
+        End With
+        
+        .DataPivotField.Orientation = xlRowField
+        
         .PivotFields("Year").Orientation = xlColumnField
         .PivotFields("Week").Orientation = xlColumnField
         .PivotFields("Classification").Orientation = xlRowField
         
         .PivotFields(StrColumnApplication).Orientation = xlPageField
-        
+
         Call RemovePivotTableSubtotals(Pvt)
         .RepeatAllLabels xlRepeatLabels
         .ShowPages PageField:="Application"
     End With
+    
+    For Each Sht In ActiveWorkbook.Worksheets
+        If Sht.PivotTables.count > 0 Then
+            Sht.PivotTables(1).TableRange2.EntireColumn.AutoFit
+        End If
+    Next Sht
     
     Set Pvt = Nothing
     Set shtCustomReport = Nothing
@@ -502,8 +560,17 @@ Private Sub AddColumns(Sht As Worksheet)
     Call AddColumn(Sht, COLUMN_WEEK, "WEEKNUM(RC[-1], 21)", FormulaPrefix:="W", NumberFormat:="0") 'FormulaR1C1 = "=INT((RC[-1]-SUM(MOD(DATE(YEAR(RC[-1]-MOD(RC[-1]-2,7)+3),1,2),{1E+99;7})*{1;-1})+5)/7)"
     Call AddColumn(Sht, COLUMN_YEAR, "IF(AND(WEEKNUM(RC[-1],21)>50,MONTH(RC[-1])=1),YEAR(RC[-1])-1,YEAR(RC[-1]))", NumberFormat:="0000")
 
-    Call AddColumn(Sht, COLUMN_HELPER_PPSID, "1/COUNTIFS([Week],[@Week],[Pinpoint session ID],[@[Pinpoint session ID]])")
-    Call AddColumn(Sht, COLUMN_HELPER_PUID, "1/COUNTIFS([Week],[@Week],[PUID],[@[PUID]])")
+    Call AddColumn(Sht, COLUMN_HELPER_PPSID_WEEK, "1/COUNTIFS([Week],[@Week],[Pinpoint session ID],[@[Pinpoint session ID]])")
+    Call AddColumn(Sht, COLUMN_HELPER_PUID_WEEK, "1/COUNTIFS([Week],[@Week],[PUID],[@[PUID]])")
+
+    Call AddColumn(Sht, COLUMN_HELPER_PPSID_WEEK_REASONID, "1/COUNTIFS([Week],[@Week],[Pinpoint session ID],[@[Pinpoint session ID]],[Reason ID],[@[Reason ID]])")
+    Call AddColumn(Sht, COLUMN_HELPER_PUID_WEEK_REASONID, "1/COUNTIFS([Week],[@Week],[PUID],[@PUID],[Reason ID],[@[Reason ID]])")
+
+    Call AddColumn(Sht, COLUMN_HELPER_PPSID_WEEK_REASONID_CLS, "1/COUNTIFS([Week],[@Week],[Pinpoint session ID],[@[Pinpoint session ID]],[Reason ID],[@[Reason ID]],[Classification],[@Classification])")
+    Call AddColumn(Sht, COLUMN_HELPER_PUID_WEEK_REASONID_CLS, "1/COUNTIFS([Week],[@Week],[PUID],[@PUID],[Reason ID],[@[Reason ID]],[Classification],[@Classification])")
+
+    Call AddColumn(Sht, COLUMN_HELPER_PPSID_WEEK_CLS, "1/COUNTIFS([Week],[@Week],[Pinpoint session ID],[@[Pinpoint session ID]],[Classification],[@Classification])")
+    Call AddColumn(Sht, COLUMN_HELPER_PUID_WEEK_CLS, "1/COUNTIFS([Week],[@Week],[PUID],[@PUID],[Classification],[@Classification])")
 End Sub
 
 Private Sub AddColumn(Sht As Worksheet, ColumnName As String, FormulaR1C1 As String, Optional FormulaPrefix As String = "", Optional NumberFormat As String)
@@ -513,7 +580,7 @@ Private Sub AddColumn(Sht As Worksheet, ColumnName As String, FormulaR1C1 As Str
     lngEventDateColIndex = GetSheetColumnIndexByTitle(TB_COLUMN_EVENT_DATE, Sht, Sht.Range("A1"))
     Columns(lngEventDateColIndex + 1).Insert
     Cells(1, lngEventDateColIndex + 1).Value2 = ColumnName
-'Stop
+    
     Set rngDataRange = GetDataRangeForColumn(Sht, Sht.Range("A1").CurrentRegion, ColumnName)
     With rngDataRange
         If FormulaPrefix <> "" Then
@@ -606,13 +673,23 @@ Private Sub MergeSameCells(WorkRange As Range)
     
     'merge all same cells in range
 MergeSame:
-    For Each Cell In WorkRange
-        If Cell.Value = Cell.Offset(0, 1).Value And Not IsEmpty(Cell) Then
-            Range(Cell, Cell.Offset(0, 1)).Merge
-            Cell.HorizontalAlignment = xlCenter
-            GoTo MergeSame
-        End If
-    Next
+    If WorkRange.Rows.count = 1 Then
+        For Each Cell In WorkRange
+            If Cell.Value = Cell.Offset(0, 1).Value And Not IsEmpty(Cell) Then
+                Range(Cell, Cell.Offset(0, 1)).Merge
+                Cell.HorizontalAlignment = xlCenter
+                GoTo MergeSame
+            End If
+        Next
+    ElseIf WorkRange.Columns.count = 1 Then
+        For Each Cell In WorkRange
+            If Cell.Value = Cell.Offset(1, 0).Value And Not IsEmpty(Cell) Then
+                Range(Cell, Cell.Offset(1, 0)).Merge
+                Cell.VerticalAlignment = xlVAlignCenter
+                GoTo MergeSame
+            End If
+        Next
+    End If
     
     'turn display alerts back on
     Application.DisplayAlerts = True
@@ -707,7 +784,9 @@ Sub RemovePivotTableSubtotals(pt As PivotTable)
         If PvtField.Orientation = xlColumnField Or PvtField.Orientation = xlRowField Then
             With PvtField
                 .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
-                .ShowAllItems = True
+                If LCase(PvtField.Name) <> "year" And LCase(PvtField.Name) <> "week" Then
+                    .ShowAllItems = True
+                End If
             End With
         End If
         Err.Clear
@@ -715,6 +794,19 @@ Sub RemovePivotTableSubtotals(pt As PivotTable)
     On Error GoTo 0
 End Sub
 
-
-
-
+Sub RemoveDivisionByZeroColumns()
+    Dim lngAreasCount As Long
+    Dim lngColIndex As Long
+    Dim rngData As Range
+    
+    Set rngData = Range("a1").CurrentRegion
+    For lngColIndex = rngData.Columns.count To 1 Step -1
+        On Error Resume Next 'ignore errors 'No cells were found'
+        lngAreasCount = rngData.Columns(lngColIndex).SpecialCells(xlCellTypeConstants, 16).Areas.count
+        Err.Clear
+        On Error GoTo 0
+        If lngAreasCount = 1 Then
+            rngData.Columns(lngColIndex).EntireColumn.Delete
+        End If
+    Next lngColIndex
+End Sub
