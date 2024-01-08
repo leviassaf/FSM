@@ -290,8 +290,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         Set rngWeeklyRR_TP_RATE_SESSION = .Cells(.UsedRange.SpecialCells(xlCellTypeLastCell).Row, 1).CurrentRegion
 Stop
         
-        Set rngWithCalculatedItem = rngWeeklyRR_TP_RATE_SESSION.SpecialCells(xlCellTypeConstants, 16) 'Cells with errors
-        Range("B55:B72").Delete Shift:=xlToLeft
+        'Implement sub 'RemoveDivisionByZeroColumns' properly
         
         Call MergeSameCells(rngWeeklyRR_TP_RATE_SESSION.Resize(1, rngWeeklyRR_TP_RATE_SESSION.Columns.count))
     End With
