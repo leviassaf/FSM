@@ -89,7 +89,7 @@ Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = "C\n14"
     Dim arrVarValuesRiskReasons() As Variant
     
     strBoxPath = Environ("UserProfile") & Application.PathSeparator & "Box" & Application.PathSeparator & "Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs"
-    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs\D"
+    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs\E"
     If strDetectionRateFolderPath = "False" Then Exit Sub
     Application.ScreenUpdating = False
     intNumberOfSourceFiles = CountFilesInFolder(strDetectionRateFolderPath)
@@ -130,6 +130,9 @@ Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = "C\n14"
             End With
             .Name = "Raw Data"
         End With
+        
+        Call RemoveDuplicates(shtRawData)
+        
         arrColumnsWithExceptions = SetDataSourceType(shtRawData)
         If Len(Join(arrColumnsWithExceptions)) = 0 Then
             arrVarValuesRiskReasons = Array(REASON_ID__1, REASON_ID__2, REASON_ID_BLANK)
@@ -145,6 +148,20 @@ Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = "C\n14"
 Application.ScreenUpdating = True
     Set wbk = Nothing
     Set shtRawData = Nothing
+End Sub
+
+Private Sub RemoveDuplicates(shtRawData As Worksheet)
+    Dim intArray As Variant, i As Integer
+    Dim rng As Range
+    
+    Set rng = shtRawData.UsedRange.Rows
+    With rng
+        ReDim intArray(0 To .Columns.count - 1)
+        For i = 0 To UBound(intArray)
+            intArray(i) = i + 1
+        Next i
+        .RemoveDuplicates Columns:=(intArray), Header:=xlYes
+    End With
 End Sub
 
 Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
@@ -288,7 +305,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         End With
         
         Set rngWeeklyRR_TP_RATE_SESSION = .Cells(.UsedRange.SpecialCells(xlCellTypeLastCell).Row, 1).CurrentRegion
-Stop
+'Stop
         
         'Implement sub 'RemoveDivisionByZeroColumns' properly
         

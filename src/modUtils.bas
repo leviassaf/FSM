@@ -555,7 +555,7 @@ Public Function SplitWorksheetsByColumnValues(FieldName As String, Sht As Worksh
 
      Application.DisplayAlerts = False
      Worksheets("UniqueList").Delete
-     Sht.Delete
+'     Sht.Delete
      Application.DisplayAlerts = True
      booSuccess = True
      SplitWorksheetsByColumnValues = booSuccess

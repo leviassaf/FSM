@@ -34,7 +34,7 @@ Attribute GetTablesForSessionId.VB_ProcData.VB_Invoke_Func = "S\n14"
     End If
     
 '    strOrigin = Application.InputBox("Type the Origin to extract Redshift data: ", "Session ID Analysis", "anz", Type:=2)
-    strOrigin = "lgt"
+    strOrigin = "cagricole"
     If strOrigin = "False" Or Trim(strOrigin) = "" Then
         Exit Sub
     End If
@@ -46,11 +46,11 @@ Attribute GetTablesForSessionId.VB_ProcData.VB_Invoke_Func = "S\n14"
     
     Application.ScreenUpdating = False
     
-'    arrSqlQueries = Array( _
+    arrSqlQueries = Array( _
         "select * from " & strOrigin & ".policy_invocation_stats where session_id = '" & strSessionId & "' limit 10000;" _
     )
     
-    arrSqlQueries = Array( _
+'    arrSqlQueries = Array( _
         "select * from " & strOrigin & ".sessions_info where session_id = '" & strSessionId & "' limit 10000;", _
         "select * from " & strOrigin & ".policy_results where session_id = '" & strSessionId & "' limit 10000;", _
         "select * from " & strOrigin & ".devices where session_id = '" & strSessionId & "' limit 10000;", _

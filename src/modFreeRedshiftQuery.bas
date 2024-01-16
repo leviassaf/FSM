@@ -28,6 +28,7 @@ Attribute FreeRedshiftQuery.VB_ProcData.VB_Invoke_Func = "R\n14"
         End If
     Loop
     
+    strDSN = "Redshift_EU"
     strQueryName = ActiveCell.Offset(0, -1).Value2
     strSqlQuery = ActiveCell.Value
 
@@ -44,13 +45,13 @@ Attribute FreeRedshiftQuery.VB_ProcData.VB_Invoke_Func = "R\n14"
             .Refresh BackgroundQuery:=False
         End With
         Call FormatDateColumns(shtNew)
-        shtNew.Name = strQueryName
+        shtNew.Name = Left(strQueryName, 31)
         
-'        Call SplitWorksheetsByColumnValues("business", ActiveSheet)
-'
-'        For Each Sht In Worksheets
-'            Call CreateChart(Sht)
-'        Next Sht
+        Call SplitWorksheetsByColumnValues("business", ActiveSheet)
+
+        For Each Sht In Worksheets
+            Call CreateChart(Sht)
+        Next Sht
         
         Application.ScreenUpdating = True
 '    Else
