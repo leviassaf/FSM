@@ -2,19 +2,19 @@ Attribute VB_Name = "modActiveReasonsPerActivity"
 Option Explicit
 
 Sub ActiveReasonsPerActivity()
-    Dim pvt As PivotTable
+    Dim Pvt As PivotTable
     Dim shtPivot As Worksheet
     
     Call ActiveReasonsPerActivityInternal
     Set shtPivot = ActiveSheet
-    Set pvt = shtPivot.PivotTables(1)
-    Call CreateCustomerFacingActiveReasons(pvt, shtPivot)
+    Set Pvt = shtPivot.PivotTables(1)
+    Call CreateCustomerFacingActiveReasons(Pvt, shtPivot)
 End Sub
 
 Sub ActiveReasonsPerActivityInternal()
     Dim shtRawData As Worksheet
     Dim Lst As ListObject
-    Dim pvt As PivotTable
+    Dim Pvt As PivotTable
     Dim shtPivot As Worksheet
     Dim rngFilteredRanges As Range
     Dim lngContiguousRangeIndex As Long
@@ -57,9 +57,9 @@ Sub ActiveReasonsPerActivityInternal()
             
             ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=shtRawData.Range("A1").CurrentRegion, Version:=6). _
                 CreatePivotTable TableDestination:=shtPivot.Cells(3, 1), DefaultVersion:=6
-            Set pvt = ActiveSheet.PivotTables(1)
+            Set Pvt = ActiveSheet.PivotTables(1)
             
-            With pvt
+            With Pvt
                 .InGridDropZones = True
                 .RowAxisLayout xlTabularRow
                 .ColumnGrand = False
@@ -159,7 +159,7 @@ Private Function GetSheetColumnIndexByTitle(ColumnTitle As String, Optional Sht 
     Set rngHeader = Nothing
 End Function
 
-Sub CreateCustomerFacingActiveReasons(pvt As PivotTable, shtSource As Worksheet)
+Sub CreateCustomerFacingActiveReasons(Pvt As PivotTable, shtSource As Worksheet)
     Dim rngSource As Range
     Dim rngDestination As Range
     Dim shtDestination As Worksheet
@@ -169,9 +169,9 @@ Sub CreateCustomerFacingActiveReasons(pvt As PivotTable, shtSource As Worksheet)
     Dim strDestDataBodyRangeAddress As String
     
     Set shtDestination = Worksheets.Add
-    Set pvt = shtSource.PivotTables(1)
-    Set rngSource = pvt.TableRange1
-    strDestDataBodyRangeAddress = pvt.DataBodyRange.Offset(-2 - pvt.PageFields.count).Address
+    Set Pvt = shtSource.PivotTables(1)
+    Set rngSource = Pvt.TableRange1
+    strDestDataBodyRangeAddress = Pvt.DataBodyRange.Offset(-2 - Pvt.PageFields.count).Address
     lngSourceRowsCount = rngSource.Rows.count - 1
     lngSourceColumnsCount = rngSource.Columns.count
     Set rngSource = rngSource.Offset(1).Resize(lngSourceRowsCount, lngSourceColumnsCount)

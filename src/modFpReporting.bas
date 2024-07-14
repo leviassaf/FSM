@@ -80,8 +80,7 @@ Public Sub RiskReasonsPrecision()
 Attribute RiskReasonsPrecision.VB_ProcData.VB_Invoke_Func = "C\n14"
     Const REPORT_NAME As String = "Pivot Table"
     Dim shtRawData As Worksheet
-    Dim pvt As PivotTable
-    Dim shtReport As Worksheet
+    Dim Pvt As PivotTable
     
     Set TimeMeasurer = New CTimer
     Dim Wbk As Workbook
@@ -97,37 +96,68 @@ TimeMeasurer.StartCounter
 Debug.Print "prepareData: " & TimeMeasurer.TimeElapsed
 
 TimeMeasurer.StartCounter
-        Set pvt = CreatePivotReport(shtRawData, REPORT_NAME)
+        Set Pvt = CreatePivotReport(shtRawData, REPORT_NAME)
 Debug.Print "CreatePivotReport: " & TimeMeasurer.TimeElapsed
 
-    Set shtReport = ConvertPivotToTable(pvt)
-    Call formatTable(shtReport)
-      
+    Call createChannelReports(Pvt)
+    AppActivate Application.Caption
+    
     Application.ScreenUpdating = True
     Set Wbk = Nothing
 End Sub
 
+Private Sub createChannelReports(Pvt As PivotTable)
+    Dim shtReport As Worksheet
+    Dim PvtField As PivotField
+    
+    With Pvt
+        .PivotFields("Channel").CurrentPage = "mobile"
+        Set shtReport = ConvertPivotToTable(Pvt)
+        
+        Call AddWorksheetEventCode(ActiveWorkbook, shtReport, "FollowHyperlink")
+      
+        .PivotFields("Channel").CurrentPage = "online"
+        Set shtReport = ConvertPivotToTable(Pvt)
+        
+        Call AddWorksheetEventCode(ActiveWorkbook, shtReport, "FollowHyperlink")
+      
+        Set PvtField = .PivotFields("Channel")
+        With PvtField
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+    End With
+End Sub
+
 Sub test()
-    Dim pvt As PivotTable
-    Set pvt = ActiveSheet.PivotTables(1)
-    ConvertPivotToTable pvt
+    Dim Pvt As PivotTable
+    Set Pvt = ActiveSheet.PivotTables(1)
+    createChannelReports Pvt
     
 '    Dim shtReport As Worksheet
 '    Set shtReport = ActiveSheet
 '    formatTable shtReport
 End Sub
 
-Private Function ConvertPivotToTable(pvt As PivotTable) As Worksheet
+Private Sub createHyperlinks(Sht As Worksheet, HyperlinksRange As Range)
+    Dim Cel As Range
+    
+    For Each Cel In HyperlinksRange
+        Sht.Hyperlinks.Add Anchor:=Cel, Address:="", SubAddress:=Sht.Name & "!" & Cel.Address(False, False, xlA1)
+    Next Cel
+End Sub
+
+Private Function ConvertPivotToTable(Pvt As PivotTable) As Worksheet
     Dim shtReport As Worksheet
     Dim rngSort As Range
     Dim rngSortKey As Range
+    Dim lngLastRowIndex As Long
 
     Set shtReport = Worksheets.Add
 
     With shtReport
         'Convert values from pivot table to the new worksheet
-        Call CopyValues(pvt.TableRange1, Destination:=.Cells(1))
-
+        Call CopyValues(Pvt.TableRange1, Destination:=.Cells(1))
         .Rows(1).Delete
         
         Range("L1:M1").Value2 = "Grand Total"
@@ -172,8 +202,10 @@ Private Function ConvertPivotToTable(pvt As PivotTable) As Worksheet
         'Merge cells containing same value
         Call MergeSameCells(Application.Intersect(.UsedRange, .Rows(1)))
         
-        '.Name = "Report"
-        Call ApplyConditionFormat(.Range("P3:P27,S3:S27"))
+        .Name = Pvt.PivotFields("Channel").CurrentPage
+        lngLastRowIndex = .Cells.SpecialCells(xlCellTypeLastCell).Row
+        Call ApplyConditionFormat(.Range("P3:P" & CStr(lngLastRowIndex)))
+        Call ApplyConditionFormat(.Range("S3:S" & CStr(lngLastRowIndex)))
         Call FormatThousandsSeparator(.Range("D:M"))
         Application.Intersect(.UsedRange, .Rows(2)).AutoFilter
         Set rngSort = .Range(.Range("A2"), .Cells.SpecialCells(xlCellTypeLastCell).Offset(-1))
@@ -189,6 +221,9 @@ Private Function ConvertPivotToTable(pvt As PivotTable) As Worksheet
 
         .Rows("1:3").Insert Shift:=xlDown
         .UsedRange.EntireColumn.AutoFit
+'Stop
+        Call createHyperlinks(shtReport, Application.Intersect(.Range("D:K"), .UsedRange).SpecialCells(xlCellTypeConstants, 1))
+        
     End With
     Set ConvertPivotToTable = shtReport
 Set shtReport = Nothing
@@ -209,20 +244,20 @@ Private Sub ApplyConditionFormat(RngToFormat As Range)
     End With
 End Sub
 
-Private Sub formatTable(shtReport As Worksheet)
-    Call MergeAlignCells(shtReport)
-End Sub
+'Private Sub formatTable(shtReport As Worksheet)
+'    Call MergeAlignCells(shtReport)
+'End Sub
 
-Private Sub MergeAlignCells(shtReport As Worksheet)
-    Dim intCol As Integer
-    
-    For intCol = 1 To 3
-        With Range(Cells(1, intCol), Cells(2, intCol))
-            .MergeCells = True
-            .VerticalAlignment = xlCenter
-        End With
-    Next intCol
-End Sub
+'Private Sub MergeAlignCells(shtReport As Worksheet)
+'    Dim intCol As Integer
+'
+'    For intCol = 1 To 3
+'        With Range(Cells(1, intCol), Cells(2, intCol))
+'            .MergeCells = True
+'            .VerticalAlignment = xlCenter
+'        End With
+'    Next intCol
+'End Sub
 
 Private Sub prepareData(shtRawData As Worksheet)
     Dim arrColumnsWithExceptions() As String
@@ -259,7 +294,8 @@ Private Sub importData(Wbk As Workbook)
     Dim strQueryString As String
     
 '    strBoxPath = Environ("UserProfile") & Application.PathSeparator & "Box" & Application.PathSeparator & "Trusteer\Reporting\VBA Projects\FP Monitoring\LCL"
-    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\May 2024"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\May 2024"
+    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\LCL\June 2024"
 '    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\June 2024"
     If strDetectionRateFolderPath = "False" Then Exit Sub
     Application.ScreenUpdating = False
@@ -354,7 +390,7 @@ Private Sub RemoveDuplicates(shtRawData As Worksheet)
 End Sub
 
 Private Function CreatePivotReport(shtRawData As Worksheet, ReportName As String)
-    Dim pvt As PivotTable
+    Dim Pvt As PivotTable
     Dim shtCustomReport As Worksheet
     Dim strColumnSetFormula As String
     Dim PvtField As PivotField
@@ -368,11 +404,11 @@ Private Function CreatePivotReport(shtRawData As Worksheet, ReportName As String
     Dim rngWithCalculatedItem As Range
     Dim arrVarValuesRiskReasons() As Variant
     
-    Set pvt = GetPivotTable(shtRawData, ReportName) 'Create pivot table
+    Set Pvt = GetPivotTable(shtRawData, ReportName) 'Create pivot table
     Set shtCustomReport = ActiveWorkbook.ActiveSheet
     shtCustomReport.Name = ReportName
 
-    With pvt
+    With Pvt
         .ClearTable
         .ColumnGrand = True
         .RowGrand = False
@@ -381,7 +417,7 @@ Private Function CreatePivotReport(shtRawData As Worksheet, ReportName As String
             .Orientation = xlRowField
             .Position = 1
         End With
-        pvt.RowFields(1).DataRange.Range("A1").Group Start:=True, End:=True, Periods:=Array(False, False, False, False, True, False, False)
+        Pvt.RowFields(1).DataRange.Range("A1").Group Start:=True, End:=True, Periods:=Array(False, False, False, False, True, False, False)
         With .PivotFields("Months (Date & time)")
             .Orientation = xlColumnField
             .Position = 1
@@ -415,11 +451,16 @@ Debug.Print "filterOutIrrelevantRecords: " & TimeMeasurer.TimeElapsed
             .Position = 3
         End With
         
-        Call RemovePivotTableSubtotals(pvt)
-    End With
-    Set CreatePivotReport = pvt
+        Call RemovePivotTableSubtotals(Pvt)
     
-    Set pvt = Nothing
+        .PivotFields("Channel").Orientation = xlPageField
+    
+        .DisplayNullString = True
+        .NullString = ""
+    End With
+    Set CreatePivotReport = Pvt
+    
+    Set Pvt = Nothing
     Set shtCustomReport = Nothing
 End Function
 
@@ -478,7 +519,7 @@ End Sub
 Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String = "Pivot") As PivotTable
     Dim rngRawData As Range
     Dim shtPivot As Worksheet
-    Dim pvt As PivotTable
+    Dim Pvt As PivotTable
     Dim pvtCache As PivotCache
     Dim PvtField As PivotField
     
@@ -490,13 +531,13 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
             SourceType:=xlDatabase, _
             SourceData:=rngRawData, _
             Version:=6)
-        Set pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), TableName:=ReportName, DefaultVersion:=6)
+        Set Pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), TableName:=ReportName, DefaultVersion:=6)
     End With
     
     'Assign a VB codename to the Pivot Table Worksheet for future References
     Call RenameCodeName(shtPivot, "shtPivot")
     
-    With pvt
+    With Pvt
         .ColumnGrand = False
         .RowGrand = False
         .InGridDropZones = True
@@ -511,11 +552,11 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
     
 '    Call AddMeasures
     
-    Set GetPivotTable = pvt
+    Set GetPivotTable = Pvt
 
     Set rngRawData = Nothing
     Set shtPivot = Nothing
-    Set pvt = Nothing
+    Set Pvt = Nothing
     Set pvtCache = Nothing
 End Function
 
@@ -724,33 +765,33 @@ Private Function GetArrayOfMissingColumns(Sht As Worksheet, arrColumns() As Vari
     Erase arrColumns
 End Function
 
-Private Function EnablePowerPivot() As Boolean
-'Function needs to be fixed: in case "Power Pivot" add-in is not correctly loaded for some reason, the function still returns "True"
-
-    Dim bAvailable As Boolean
-    Dim comPowerPivot As COMAddIn
-    Dim cmd As CommandBarControl
-    
-    On Error Resume Next
-    Set cmd = Application.CommandBars("Worksheet Menu Bar").Controls(POWERPIVOT_MENUBAR_CONTROL)
-    Err.Clear
-    On Error GoTo 0
-    
-    If cmd Is Nothing Then
-        Set comPowerPivot = Application.COMAddIns(POWERPIVOT_COMADDIN_PROGID)
-        If Not comPowerPivot Is Nothing Then
-            comPowerPivot.Connect = False
-            If Not comPowerPivot.Connect Then comPowerPivot.Connect = True
-            bAvailable = comPowerPivot.Connect
-        End If
-    End If
-'"Assaf, when stop hits, means you need to add code to to refresh commadin"
-    
-    EnablePowerPivot = bAvailable
-    Set comPowerPivot = Nothing
-    Set cmd = Nothing
-End Function
-
+'Private Function EnablePowerPivot() As Boolean
+''Function needs to be fixed: in case "Power Pivot" add-in is not correctly loaded for some reason, the function still returns "True"
+'
+'    Dim bAvailable As Boolean
+'    Dim comPowerPivot As COMAddIn
+'    Dim cmd As CommandBarControl
+'
+'    On Error Resume Next
+'    Set cmd = Application.CommandBars("Worksheet Menu Bar").Controls(POWERPIVOT_MENUBAR_CONTROL)
+'    Err.Clear
+'    On Error GoTo 0
+'
+'    If cmd Is Nothing Then
+'        Set comPowerPivot = Application.COMAddIns(POWERPIVOT_COMADDIN_PROGID)
+'        If Not comPowerPivot Is Nothing Then
+'            comPowerPivot.Connect = False
+'            If Not comPowerPivot.Connect Then comPowerPivot.Connect = True
+'            bAvailable = comPowerPivot.Connect
+'        End If
+'    End If
+''"Assaf, when stop hits, means you need to add code to to refresh commadin"
+'
+'    EnablePowerPivot = bAvailable
+'    Set comPowerPivot = Nothing
+'    Set cmd = Nothing
+'End Function
+'
 Private Sub MergeSameCells(WorkRange As Range)
     Dim Cell As Range
     'turn off display alerts while merging
@@ -808,24 +849,24 @@ Private Function CountFilesInFolder(FolderPath As String, Optional FileExtension
 End Function
 
 Private Sub RenameCodeName(Sht As Worksheet, NewName As String)
-    Dim vbProj As VBIDE.VBProject
+    Dim VBProj As VBIDE.VBProject
     Dim vbComps As VBIDE.VBComponents
-    Dim vbComp As VBIDE.VBComponent
+    Dim VBComp As VBIDE.VBComponent
     Dim vbProps As VBIDE.Properties
     Dim CodeNameProp As VBIDE.Property
     
-    Set vbProj = Sht.Parent.VBProject
-    Set vbComps = vbProj.VBComponents
-    Set vbComp = vbComps(Sht.CodeName)
-    Set vbProps = vbComp.Properties
+    Set VBProj = Sht.Parent.VBProject
+    Set vbComps = VBProj.VBComponents
+    Set VBComp = vbComps(Sht.CodeName)
+    Set vbProps = VBComp.Properties
     Set CodeNameProp = vbProps("_Codename")
     CodeNameProp.Value = NewName
     
     Set CodeNameProp = Nothing
     Set vbProps = Nothing
-    Set vbComp = Nothing
+    Set VBComp = Nothing
     Set vbComps = Nothing
-    Set vbProj = Nothing
+    Set VBProj = Nothing
 End Sub
 
 Private Sub DeleteIrrelevantRecords(Sht As Worksheet, FieldName As String, Criteria As Variant)
@@ -893,6 +934,119 @@ Private Sub RemoveDivisionByZeroColumns()
     Next lngColIndex
 End Sub
 
+Public Sub AddWorksheetEventCode(Wbk As Workbook, Sht As Worksheet, EventName As String)
+'Tools > references > Microsoft Visual Basic for Applications Extensibility 5.3
+'Trust access to VBA model
 
-
+    Dim VBProj As VBIDE.VBProject
+    Dim VBComp As VBIDE.VBComponent
+    Dim CodeMod As VBIDE.CodeModule
+    Dim lngLine As Long
+    
+    Set VBProj = Wbk.VBProject
+    
+    Set VBComp = VBProj.VBComponents(Sht.CodeName)
+    Set CodeMod = VBComp.CodeModule
+    
+    With CodeMod
+        lngLine = lngLine + 4
+        .InsertLines lngLine, "Private Sub DrillThrough(Cel As Range)"
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim rngClassification As Range"
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim lngReasonID As Long"
+        
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim lngRiskScore As Long"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim lngMonthIndex As Long"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim strChannel As String"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim rngMonth As Range"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim rngTable As Range"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim rngHeaderFirstLine As Range"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim rngHeaderSecondLine As Range"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set rngTable = Cel.CurrentRegion"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set rngHeaderFirstLine = rngTable.Resize(1)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set rngHeaderSecondLine = rngHeaderFirstLine.Offset(1)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set rngClassification = Application.Intersect(Cel.EntireColumn, rngHeaderFirstLine)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "If rngClassification.Value = """" Then"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set rngClassification = Application.Intersect(Cel.EntireColumn, rngHeaderFirstLine).Offset(0, -1)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "End If"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "lngReasonID = CLng(Application.Intersect(Cel.EntireRow, Range(""A:A"")).Value)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "lngRiskScore = CLng(Application.Intersect(Cel.EntireRow, Range(""C:C"")).Value)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set rngMonth = Application.Intersect(Cel.EntireColumn, rngHeaderSecondLine)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "lngMonthIndex = Month(DateValue(""01"" & "" "" & Format(Left(rngMonth.Value2, 3), ""mmm"") & "" "" & Format(Now(), ""yyyy"")))"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "strChannel = Cel.Parent.Name"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "GetPivotDataRange(rngClassification, lngReasonID, lngRiskScore, lngMonthIndex, strChannel).ShowDetail = True"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "End Sub"
+        
+        lngLine = lngLine + 1
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Function GetPivotDataRange(ClassificationValue As Range, ReasonID As Long, RiskScore As Long, MonthIndex As Long, Channel As String) As Range"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim rngTableItem As Range"
+        
+        lngLine = lngLine + 1
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "ActiveWorkbook.Worksheets(""Pivot Table"").Select"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set rngTableItem = ActiveSheet.PivotTables(1).GetPivotData(""Pinpoint session ID"", ""Classification"", ClassificationValue, ""Reason ID"", ReasonID, ""Risk score"", RiskScore, ""Months (Date & time)"", MonthIndex, ""Channel"", Channel)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set GetPivotDataRange = rngTableItem"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "End Function"
+        
+        lngLine = lngLine + 1
+        lngLine = .CreateEventProc(EventName, "Worksheet")
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Call DrillThrough(Target.Range)"
+    End With
+    Set VBProj = Nothing
+    Set VBComp = Nothing
+    Set CodeMod = Nothing
+End Sub
 

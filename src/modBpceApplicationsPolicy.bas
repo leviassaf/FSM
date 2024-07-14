@@ -9,7 +9,7 @@ Sub BpceApplicationsPolicy()
     Dim strDetectionRateFolderPath As String
     Dim strBoxPath As String
     Dim arrColumnsWithExceptions As Variant
-    Dim pvt As PivotTable
+    Dim Pvt As PivotTable
     Const REPORT_NAME As String = "Pivot Table"
     Dim intNumberOfSourceFiles As Integer
     Dim strQueryString As String
@@ -68,8 +68,8 @@ Sub BpceApplicationsPolicy()
         Call ActiveReasonsPerActivityInternal
         
         Set shtPivot = ActiveSheet
-        Set pvt = shtPivot.PivotTables(1)
-        With pvt
+        Set Pvt = shtPivot.PivotTables(1)
+        With Pvt
             With .PivotFields("Source.Name")
                 .Orientation = xlPageField
                 .Position = 1
@@ -88,7 +88,7 @@ Sub BpceApplicationsPolicy()
     Application.DisplayAlerts = True
     
     For Each shtApplicationPivot In Worksheets
-        Call CreateCustomerFacingActiveReasons(pvt, shtApplicationPivot)
+        Call CreateCustomerFacingActiveReasons(Pvt, shtApplicationPivot)
         
         strApplicationName = shtApplicationPivot.Name
         Application.DisplayAlerts = False

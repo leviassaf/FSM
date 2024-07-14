@@ -81,7 +81,7 @@ Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = " \n14"
     Dim strDetectionRateFolderPath As String
     Dim strBoxPath As String
     Dim arrColumnsWithExceptions As Variant
-    Dim pvt As PivotTable
+    Dim Pvt As PivotTable
     Const REPORT_NAME As String = "Pivot Table"
     Dim intNumberOfSourceFiles As Integer
     Dim strQueryString As String
@@ -184,7 +184,7 @@ Private Sub RemoveDuplicates(shtRawData As Worksheet)
 End Sub
 
 Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
-    Dim pvt As PivotTable
+    Dim Pvt As PivotTable
     Dim shtCustomReport As Worksheet
     Dim strColumnSetFormula As String
     Dim PvtField As PivotField
@@ -197,12 +197,12 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
     Dim Sht As Worksheet
     Dim rngWithCalculatedItem As Range
     
-    Set pvt = GetPivotTable(shtRawData, ReportName) 'Create pivot table
+    Set Pvt = GetPivotTable(shtRawData, ReportName) 'Create pivot table
     Set shtCustomReport = ActiveWorkbook.ActiveSheet
     shtCustomReport.Name = ReportName
 
     'Create report "distinct PPSID/PUID by week"
-    With pvt
+    With Pvt
         .ClearTable
         .ColumnGrand = False
         .RowGrand = False
@@ -220,7 +220,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         .PivotFields("Year").Orientation = xlColumnField
         .PivotFields("Week").Orientation = xlColumnField
         
-        Call RemovePivotTableSubtotals(pvt)
+        Call RemovePivotTableSubtotals(Pvt)
         .RepeatAllLabels xlRepeatLabels
     End With
 
@@ -228,7 +228,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
     
     With shtNational
         'Convert values from pivot table to the new worksheet
-        Call CopyValues(pvt.TableRange1, Destination:=.Cells(1))
+        Call CopyValues(Pvt.TableRange1, Destination:=.Cells(1))
         
         .Rows(1).Delete
         'Merge cells containing same value
@@ -241,7 +241,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         .Name = "National"
     End With
     
-    With pvt
+    With Pvt
         'Reset pivot table
         .ClearTable
         .ColumnGrand = False
@@ -261,11 +261,11 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         .PivotFields("Week").Orientation = xlColumnField
         .PivotFields("Reason").Orientation = xlRowField
         
-        Call RemovePivotTableSubtotals(pvt)
+        Call RemovePivotTableSubtotals(Pvt)
         .RepeatAllLabels xlRepeatLabels
     End With
     
-    Call CopyValues(pvt.TableRange1, Destination:=rngWeeklyRRSessionCounts)
+    Call CopyValues(Pvt.TableRange1, Destination:=rngWeeklyRRSessionCounts)
     
     With shtNational
         rngWeeklyRRSessionCounts.EntireRow.Delete
@@ -286,7 +286,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
     End With
     
 '''''''''''
-    With pvt
+    With Pvt
         .ClearTable
         .ColumnGrand = False
         .RowGrand = False
@@ -310,12 +310,12 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
             .PivotItems("pending_confirmation").Visible = False
             .PivotItems("undetermined").Visible = False
         End With
-        Call RemovePivotTableSubtotals(pvt)
+        Call RemovePivotTableSubtotals(Pvt)
         .RepeatAllLabels xlRepeatLabels
         lngRowOffset = .DataBodyRange.Row - .TableRange1.Row - 1
     End With
     
-    Call CopyValues(pvt.TableRange1.Resize(, pvt.TableRange1.Columns.count - 1), Destination:=rngWeeklyRR_TP_RATE_SESSION)
+    Call CopyValues(Pvt.TableRange1.Resize(, Pvt.TableRange1.Columns.count - 1), Destination:=rngWeeklyRR_TP_RATE_SESSION)
     
     With shtNational
         With rngWeeklyRR_TP_RATE_SESSION.Cells(1)
@@ -336,7 +336,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         .NumberFormat = "0%"
     End With
 '''''''''''
-    With pvt
+    With Pvt
         .ClearTable
         .ColumnGrand = True
         .RowGrand = False
@@ -357,7 +357,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         
         .PivotFields(StrColumnApplication).Orientation = xlPageField
 
-        Call RemovePivotTableSubtotals(pvt)
+        Call RemovePivotTableSubtotals(Pvt)
         .RepeatAllLabels xlRepeatLabels
         .ShowPages PageField:="Application"
     End With
@@ -368,7 +368,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         End If
     Next Sht
     
-    Set pvt = Nothing
+    Set Pvt = Nothing
     Set shtCustomReport = Nothing
     Set shtNational = Nothing
 End Sub
@@ -428,7 +428,7 @@ End Sub
 Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String = "Pivot") As PivotTable
     Dim rngRawData As Range
     Dim shtPivot As Worksheet
-    Dim pvt As PivotTable
+    Dim Pvt As PivotTable
     Dim pvtCache As PivotCache
     Dim PvtField As PivotField
     
@@ -440,13 +440,13 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
             SourceType:=xlDatabase, _
             SourceData:=rngRawData, _
             Version:=6)
-        Set pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), TableName:=ReportName, DefaultVersion:=6)
+        Set Pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), TableName:=ReportName, DefaultVersion:=6)
     End With
     
     'Assign a VB codename to the Pivot Table Worksheet for future References
     Call RenameCodeName(shtPivot, "shtPivot")
     
-    With pvt
+    With Pvt
         .ColumnGrand = False
         .RowGrand = False
         .InGridDropZones = True
@@ -461,11 +461,11 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
     
 '    Call AddMeasures
     
-    Set GetPivotTable = pvt
+    Set GetPivotTable = Pvt
 
     Set rngRawData = Nothing
     Set shtPivot = Nothing
-    Set pvt = Nothing
+    Set Pvt = Nothing
     Set pvtCache = Nothing
 End Function
 
@@ -758,24 +758,24 @@ Private Function CountFilesInFolder(FolderPath As String, Optional FileExtension
 End Function
 
 Private Sub RenameCodeName(Sht As Worksheet, NewName As String)
-    Dim vbProj As VBIDE.VBProject
+    Dim VBProj As VBIDE.VBProject
     Dim vbComps As VBIDE.VBComponents
-    Dim vbComp As VBIDE.VBComponent
+    Dim VBComp As VBIDE.VBComponent
     Dim vbProps As VBIDE.Properties
     Dim CodeNameProp As VBIDE.Property
     
-    Set vbProj = Sht.Parent.VBProject
-    Set vbComps = vbProj.VBComponents
-    Set vbComp = vbComps(Sht.CodeName)
-    Set vbProps = vbComp.Properties
+    Set VBProj = Sht.Parent.VBProject
+    Set vbComps = VBProj.VBComponents
+    Set VBComp = vbComps(Sht.CodeName)
+    Set vbProps = VBComp.Properties
     Set CodeNameProp = vbProps("_Codename")
     CodeNameProp.Value = NewName
     
     Set CodeNameProp = Nothing
     Set vbProps = Nothing
-    Set vbComp = Nothing
+    Set VBComp = Nothing
     Set vbComps = Nothing
-    Set vbProj = Nothing
+    Set VBProj = Nothing
 End Sub
 
 Private Sub DeleteIrrelevantRecords(Sht As Worksheet, FieldName As String, Criteria As Variant)
