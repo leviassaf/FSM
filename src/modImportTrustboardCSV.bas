@@ -36,7 +36,7 @@ End Function
 
 Sub ImportTrustboardCSV()
 Attribute ImportTrustboardCSV.VB_ProcData.VB_Invoke_Func = "I\n14"
-    Dim wbk As Workbook
+    Dim Wbk As Workbook
     Dim Sht As Worksheet
     Dim strNewestFileName As String
     Dim strNewestFileFullName As String
@@ -44,34 +44,34 @@ Attribute ImportTrustboardCSV.VB_ProcData.VB_Invoke_Func = "I\n14"
     
     strNewestFileFullName = getNewestFileFullName(strNewestFileName)
     'If Left(strNewestFileName, 4) = "guid" Then 'commented out since TB changed PUID export file name around December 14 2023
-    If False Then
+    If Len(strNewestFileFullName) > 70 Then
         strPowerQueryFormula = _
-            "let Source = Csv.Document(File.Contents(""" & strNewestFileFullName & """),[Delimiter="","", Encoding=65001, QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]), " & _
-            "#""Changed Type"" = Table.TransformColumnTypes(#""Promoted Headers"",{{""Account Id"", type text}, {""Application"", type text}, {""Browser"", type text}, {""Browser version"", type text}, {""Classification"", type text}, {""Client Language"", type text}, {""Line Carrier"", type text}, {""Country code"", type text}, {""Date & time"", type datetimezone}, {""Customer session IDs"", type text}, " & _
-            "{""Device ID"", type text}, {""Encrypted user ID"", type text}, {""City"", type text}, {""Country"", type text}, {""ISP"", type text}, {""IP"", type text}, {""Name"", type text}, {""Machine ID"", type text}, {""Malware Name"", type text}, {""Infected App"", type text}, {""Infected Package"", type text}, {""OS"", type text}, {""Pinpoint session ID"", type text}, " & _
-            "{""Platform"", type text}, {""PUID"", type text}, {""Assessment Details"", type text}, {""Recommendation"", type text}, {""Partial result reason"", type text}, {""Reason ID"", Int64.Type}, {""Reason"", type text}, {""Risk score"", Int64.Type}, {""Classified By"", type text}, {""Status"", type text}, {""Classified At"", type text}, {""New Device"", type logical}, " & _
-            "{""Activity"", type text}, {""Closed By"", type text}, {""Closed At"", type text}, {""User Agent"", type text}, {""Assigned To"", type text}, {""Phishing Url"", type text}, {""Detected At"", type text}, {""SDK Configuration"", type text}, {""SDK Version"", type text}, {""MRST App Count"", type text}, {""Call In Progress"", type text}, {""User Behavioral Score"", type text}, " & _
-            "{""Risky Device"", type text}, {""Risky Connection"", type text}, {""Battery Charging"", type text}, {""Behavioral Anomaly"", type text}, {""First Seen In Account"", type text}, {""First Seen In Region"", type text}, {""Fraud MO"", type text}, {""Agent Key"", type text}, {""Marketing Name"", type text}, {""Channel"", type text}, {""Transaction Amount"", type text}, " & _
-            "{""Is Alerted"", type logical}}) in #""Changed Type"""
+            "let Source = Csv.Document(File.Contents(""" & strNewestFileFullName & """),[Delimiter="","", QuoteStyle=QuoteStyle.None])," & Chr(13) & "" & Chr(10) & "    #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])," & Chr(13) & "" & Chr(10) & "    #""Changed Type"" = Table.Transfor" & _
+            "mColumnTypes(#""Promoted Headers"",{{""Account Id"", type text}, {""Application"", type text}, {""Browser"", type text}, {""Browser version"", type text}, {""Classification"", type text}, {""Client Language"", type text}, {""Line Carrier"", type text}, {""Country code"", type text}, {""Date & time"", type datetimezone}, {""Customer session IDs"", type text}, {""Devi" & _
+            "ce ID"", type text}, {""Encrypted user ID"", type text}, {""City"", type text}, {""Country"", type text}, {""ISP"", type text}, {""IP address"", type text}, {""Name"", type text}, {""Machine ID"", type text}, {""Malware Name"", type text}, {""Infected App"", type text}, {""Infected Package"", type text}, {""OS"", type text}, {""Pinpoint session ID"", type text}, {""" & _
+            "Platform"", type text}, {""PUID"", type text}, {""Assessment Details"", type text}, {""Recommendation"", type text}, {""Partial result reason"", type text}, {""Reason ID"", Int64.Type}, {""Detailed reason"", type text}, {""Risk score"", Int64.Type}, {""Classified By"", type text}, {""Status"", type text}, {""Classified At"", type text}, {""New Device"", type logical" & _
+            "}, {""Activity"", type text}, {""Closed By"", type text}, {""Closed At"", type text}, {""User Agent"", type text}, {""Assigned To"", type text}, {""Phishing URL"", type text}, {""Detected At"", type text}, {""SDK Configuration"", type text}, {""SDK Version"", type text}, {""MRST App Count"", Int64.Type}, {""Call In Progress"", type text}, {""User Behavioral Score""," & _
+            " type text}, {""Risky Device"", type text}, {""Risky Connection"", type text}, {""Battery Charging"", type text}, {""Behavioral Anomaly"", type text}, {""Device First Seen In Account"", type text}, {""Device First Seen In Region"", type text}, {""Fraud MO"", type text}, {""Agent Key"", type text}, {""Marketing Name"", type text}, {""Channel"", type text}, {""Transac" & _
+            "tion Amount"", type text}, {""GDID PUID Count Until Session"", type text}, {""Credentials submitted"", type text}, {""Reason"", type text}, {""Device language"", type text}, {""Known risky payee"", type text}, {""New location"", type text}, {""Transaction type"", type text}, {""Is Alerted (Trusteer)"", type logical}})" & Chr(13) & "" & Chr(10) & "in" & Chr(13) & "" & Chr(10) & "    #""Changed Type"""
     ElseIf Left(strNewestFileName, 2) = "20" Then
     'ElseIf True Then
         strPowerQueryFormula = _
             "let Source = Csv.Document(File.Contents(""" & strNewestFileFullName & """),[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]), " & _
             "#""Changed Type"" = Table.TransformColumnTypes(#""Promoted Headers"",{{""Account Id"", type text}, {""Application"", type text}, {""Browser"", type text}, {""Browser version"", type text}, {""Classification"", type text}, " & _
-            "{""Client Language"", type text}, {""Line Carrier"", type text}, {""Country code"", type text}, {""Date & time"", type datetime}, {""Customer session IDs"", type text}, {""Device ID"", type text}, {""Encrypted user ID"", type text}, {""City"", type text}, " & _
-            "{""Country"", type text}, {""ISP"", type text}, {""IP"", type text}, {""Name"", type text}, {""Machine ID"", type text}, {""Malware Name"", type text}, {""Infected App"", type text}, {""Infected Package"", type text}, {""OS"", type text}, " & _
+            "{""Client Language"", type text}, {""Line Carrier"", type text}, {""Country code"", type text}, {""Date & time"", type datetimezone}, {""Customer session IDs"", type text}, {""Device ID"", type text}, {""Encrypted user ID"", type text}, {""City"", type text}, " & _
+            "{""Country"", type text}, {""ISP"", type text}, {""IP address"", type text}, {""Name"", type text}, {""Machine ID"", type text}, {""Malware Name"", type text}, {""Infected App"", type text}, {""Infected Package"", type text}, {""OS"", type text}, " & _
             "{""Pinpoint session ID"", type text}, {""Platform"", type text}, {""PUID"", type text}, {""Assessment Details"", type text}, {""Recommendation"", type text}, {""Partial result reason"", type text}, {""Reason ID"", Int64.Type}, {""Reason"", type text}, " & _
             "{""Risk score"", Int64.Type}, {""Classified By"", type text}, {""Status"", type text}, {""Classified At"", type text}, {""New Device"", type logical}, {""Activity"", type text}, {""Closed By"", type text}, {""Closed At"", type text}, " & _
-            "{""User Agent"", type text}, {""Assigned To"", type text}, {""Phishing Url"", type text}, {""Detected At"", type text}, {""SDK Configuration"", Int64.Type}, {""SDK Version"", type text}, {""MRST App Count"", Int64.Type}, {""Call In Progress"", type text}, " & _
-            "{""User Behavioral Score"", type text}, {""Risky Device"", type logical}, {""Risky Connection"", type logical}, {""Battery Charging"", type logical}, {""Behavioral Anomaly"", type text}, {""First Seen In Account"", type datetime}, " & _
-            "{""First Seen In Region"", type datetime}, {""Fraud MO"", type text}, {""Agent Key"", type text}, {""Marketing Name"", type text}, {""Channel"", type text}, {""Transaction Amount"", type text}}) in #""Changed Type"""
+            "{""User Agent"", type text}, {""Assigned To"", type text}, {""Phishing URL"", type text}, {""Detected At"", type text}, {""SDK Configuration"", Int64.Type}, {""SDK Version"", type text}, {""MRST App Count"", Int64.Type}, {""Call In Progress"", type text}, " & _
+            "{""User Behavioral Score"", type text}, {""Risky Device"", type logical}, {""Risky Connection"", type logical}, {""Battery Charging"", type logical}, {""Behavioral Anomaly"", type text}, {""Device First Seen In Account"", type datetime}, " & _
+            "{""Device First Seen In Region"", type datetime}, {""Fraud MO"", type text}, {""Agent Key"", type text}, {""Marketing Name"", type text}, {""Channel"", type text}, {""Transaction Amount"", type text}}) in #""Changed Type"""
     End If
-    Set wbk = Workbooks.Add(xlWBATWorksheet)
+    Set Wbk = Workbooks.Add(xlWBATWorksheet)
 '    ActiveWorkbook.Worksheets.Add
-    wbk.Queries.Add Name:= _
+    Wbk.Queries.Add Name:= _
         "TrustboardCSV" _
         , Formula:=strPowerQueryFormula
-    Set Sht = wbk.ActiveSheet
+    Set Sht = Wbk.ActiveSheet
     With Sht.ListObjects.Add(SourceType:=0, Source:="OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=TrustboardCSV;Extended Properties=""""", Destination:=Range("$A$1")).QueryTable
         .CommandType = xlCmdSql
         .CommandText = "SELECT * FROM TrustboardCSV"

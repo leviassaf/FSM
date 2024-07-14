@@ -1,4 +1,4 @@
-Attribute VB_Name = "modCagricoleReporting"
+Attribute VB_Name = "modFpReporting"
 Option Explicit
 
 '  ********* Columns *********
@@ -72,102 +72,272 @@ Private Const POWERPIVOT_MENUBAR_CONTROL As String = "Power Pivot"
 Private Const REASON_ID__2 As String = "-2"
 Private Const REASON_ID__1 As String = "-1"
 Private Const REASON_ID_19 As String = "19"
-Private Const REASON_ID_BLANK As String = "="
+Private Const REASON_ID_BLANK As String = "(blank)"
 
-Sub cagricole_reporting()
-Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = " \n14"
-    Dim Wbk As Workbook
-    Dim shtRawData As Worksheet
-    Dim strDetectionRateFolderPath As String
-    Dim strBoxPath As String
-    Dim arrColumnsWithExceptions As Variant
-    Dim pvt As PivotTable
+Private TimeMeasurer As CTimer
+
+Public Sub RiskReasonsPrecision()
+Attribute RiskReasonsPrecision.VB_ProcData.VB_Invoke_Func = "C\n14"
     Const REPORT_NAME As String = "Pivot Table"
+    Dim shtRawData As Worksheet
+    Dim pvt As PivotTable
+    Dim shtReport As Worksheet
+    
+    Set TimeMeasurer = New CTimer
+    Dim Wbk As Workbook
+    
+    Set Wbk = Workbooks.Add(xlWBATWorksheet)
+    Set shtRawData = Wbk.ActiveSheet
+TimeMeasurer.StartCounter
+    Call importData(Wbk)
+Debug.Print "importData: " & TimeMeasurer.TimeElapsed
+
+TimeMeasurer.StartCounter
+    Call prepareData(shtRawData)
+Debug.Print "prepareData: " & TimeMeasurer.TimeElapsed
+
+TimeMeasurer.StartCounter
+        Set pvt = CreatePivotReport(shtRawData, REPORT_NAME)
+Debug.Print "CreatePivotReport: " & TimeMeasurer.TimeElapsed
+
+    Set shtReport = ConvertPivotToTable(pvt)
+    Call formatTable(shtReport)
+      
+    Application.ScreenUpdating = True
+    Set Wbk = Nothing
+End Sub
+
+Sub test()
+    Dim pvt As PivotTable
+    Set pvt = ActiveSheet.PivotTables(1)
+    ConvertPivotToTable pvt
+    
+'    Dim shtReport As Worksheet
+'    Set shtReport = ActiveSheet
+'    formatTable shtReport
+End Sub
+
+Private Function ConvertPivotToTable(pvt As PivotTable) As Worksheet
+    Dim shtReport As Worksheet
+    Dim rngSort As Range
+    Dim rngSortKey As Range
+
+    Set shtReport = Worksheets.Add
+
+    With shtReport
+        'Convert values from pivot table to the new worksheet
+        Call CopyValues(pvt.TableRange1, Destination:=.Cells(1))
+
+        .Rows(1).Delete
+        
+        Range("L1:M1").Value2 = "Grand Total"
+        Range("N1:P1").Value2 = "Precision %"
+        Range("Q1:S1").Value2 = "Handling %"
+        Range("L2:M2").Value2 = Range("J2:K2").Value2
+        Range("N2:O2").Value2 = Range("J2:K2").Value2
+        Range("Q2:R2").Value2 = Range("J2:K2").Value2
+        Range("P2, S2").Value2 = "Evol"
+        
+        
+        Application.Intersect(.UsedRange, Range("L:M")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=RC[-8]+RC[-6]+RC[-4]+RC[-2]"
+        Application.Intersect(.UsedRange, Range("N:O")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IFERROR(RC[-10]/(RC[-10]+RC[-8]),0)"
+        Application.Intersect(.UsedRange, Range("Q:R")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IFERROR((RC[-13]+RC[-11])/RC[-5],0)"
+        Application.Intersect(.UsedRange, Range("P:P, S:S")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IFERROR((RC[-1]-RC[-2])/RC[-2],0)"
+        
+        .Range(Range("N1"), .Cells.SpecialCells(xlCellTypeLastCell)).SpecialCells(xlCellTypeFormulas).NumberFormat = "0%"
+        
+        With Application.Intersect(.UsedRange, Range("1:2"))
+            .Font.Bold = True
+            With .Interior
+                .ThemeColor = xlThemeColorAccent1
+                .TintAndShade = 0.8
+            End With
+        End With
+    
+        With Application.Intersect(.UsedRange, .Cells.SpecialCells(xlCellTypeLastCell).EntireRow)
+            .Font.Bold = True
+            With .Interior
+                .ThemeColor = xlThemeColorAccent1
+                .TintAndShade = 0.8
+            End With
+        End With
+        With .UsedRange
+            .Borders(xlEdgeTop).LineStyle = xlContinuous
+            .Borders(xlEdgeBottom).LineStyle = xlContinuous
+            .Borders(xlEdgeRight).LineStyle = xlContinuous
+            .Borders(xlInsideVertical).LineStyle = xlContinuous
+            .Borders(xlInsideHorizontal).LineStyle = xlContinuous
+        End With
+        
+        'Merge cells containing same value
+        Call MergeSameCells(Application.Intersect(.UsedRange, .Rows(1)))
+        
+        '.Name = "Report"
+        Call ApplyConditionFormat(.Range("P3:P27,S3:S27"))
+        Call FormatThousandsSeparator(.Range("D:M"))
+        Application.Intersect(.UsedRange, .Rows(2)).AutoFilter
+        Set rngSort = .Range(.Range("A2"), .Cells.SpecialCells(xlCellTypeLastCell).Offset(-1))
+        Set rngSortKey = Application.Intersect(rngSort, .Range("O:O")).Offset(1)
+        Set rngSortKey = rngSortKey.Resize(rngSortKey.Rows.count - 1)
+        With .Sort
+            .SetRange rngSort
+            .SortFields.Add2 Key:=rngSortKey, SortOn:=xlSortOnValues, Order:=xlDescending, DataOption:=xlSortNormal
+            .Header = xlYes
+            .Orientation = xlTopToBottom
+            .Apply
+        End With
+
+        .Rows("1:3").Insert Shift:=xlDown
+        .UsedRange.EntireColumn.AutoFit
+    End With
+    Set ConvertPivotToTable = shtReport
+Set shtReport = Nothing
+End Function
+
+Private Sub FormatThousandsSeparator(RngToFormat As Range)
+    With RngToFormat
+        Union(.SpecialCells(xlCellTypeConstants, 1), .SpecialCells(xlCellTypeFormulas, 1)).NumberFormat = "#,##0"
+    End With
+End Sub
+
+Private Sub ApplyConditionFormat(RngToFormat As Range)
+    With RngToFormat
+        .FormatConditions.AddIconSetCondition
+        With .FormatConditions(1)
+            .IconSet = ActiveWorkbook.IconSets(xl3Arrows)
+        End With
+    End With
+End Sub
+
+Private Sub formatTable(shtReport As Worksheet)
+    Call MergeAlignCells(shtReport)
+End Sub
+
+Private Sub MergeAlignCells(shtReport As Worksheet)
+    Dim intCol As Integer
+    
+    For intCol = 1 To 3
+        With Range(Cells(1, intCol), Cells(2, intCol))
+            .MergeCells = True
+            .VerticalAlignment = xlCenter
+        End With
+    Next intCol
+End Sub
+
+Private Sub prepareData(shtRawData As Worksheet)
+    Dim arrColumnsWithExceptions() As String
+    
+    arrColumnsWithExceptions = SetDataSourceType(shtRawData)
+    If Len(Join(arrColumnsWithExceptions)) = 0 Then
+        Call RemoveDuplicates(shtRawData)
+    Else
+        MsgBox "The following columns are required for the report:" & vbNewLine & Join(arrColumnsWithExceptions, vbNewLine)
+        End
+    End If
+
+End Sub
+
+Private Sub filterOutIrrelevantRecords(PvtField As PivotField, arrFilterOutValues As Variant)
+    Dim intFilterOutValue As Integer
+    
+    With PvtField
+        For intFilterOutValue = 0 To UBound(arrFilterOutValues)
+            On Error Resume Next
+            .PivotItems(CStr(arrFilterOutValues(intFilterOutValue))).Visible = False
+            Err.Clear
+            On Error GoTo 0
+'            .PivotItems("(blank)").Visible = False
+        Next intFilterOutValue
+    End With
+End Sub
+
+Private Sub importData(Wbk As Workbook)
+    Dim shtRawData As Worksheet
+    Dim strBoxPath As String
+    Dim strDetectionRateFolderPath As String
     Dim intNumberOfSourceFiles As Integer
     Dim strQueryString As String
-
-    Dim arrVarValuesRiskReasons() As Variant
     
-    strBoxPath = Environ("UserProfile") & Application.PathSeparator & "Box" & Application.PathSeparator & "Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs"
-    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs\E"
+'    strBoxPath = Environ("UserProfile") & Application.PathSeparator & "Box" & Application.PathSeparator & "Trusteer\Reporting\VBA Projects\FP Monitoring\LCL"
+    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\May 2024"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\June 2024"
     If strDetectionRateFolderPath = "False" Then Exit Sub
     Application.ScreenUpdating = False
     intNumberOfSourceFiles = CountFilesInFolder(strDetectionRateFolderPath)
-    strQueryString = "let" & Chr(13) & "" & Chr(10) & "    Source = Folder.Files(""" & strDetectionRateFolderPath & """)," & Chr(13) & "" & Chr(10) & "    #""Filtered Hidden Files1"" = Table.SelectRows(Source, each [Attributes]?[Hidden]? <> true)," & Chr(13) & "" & Chr(10) & "    #""Invoke Custom Function1"" = Table.AddColumn(#""Filtered Hidden Files1"", ""Transform File"", each #""Trans" & _
-        "form File""([Content]))," & Chr(13) & "" & Chr(10) & "    #""Renamed Columns1"" = Table.RenameColumns(#""Invoke Custom Function1"", {""Name"", ""Source.Name""})," & Chr(13) & "" & Chr(10) & "    #""Removed Other Columns1"" = Table.SelectColumns(#""Renamed Columns1"", {""Source.Name"", ""Transform File""})," & Chr(13) & "" & Chr(10) & "    #""Expanded Table Column1"" = Table.ExpandTableColumn(#""Removed Other Columns1"", ""Transform File"", Table.Co" & _
-        "lumnNames(#""Transform File""(#""Sample File"")))," & Chr(13) & "" & Chr(10) & "    #""Changed Type"" = Table.TransformColumnTypes(#""Expanded Table Column1"",{{""Source.Name"", type text}, {""Account Id"", type text}, {""Application"", type text}, {""Browser"", type text}, {""Browser version"", type text}, {""Classification"", type text}, {""Client Language"", type text}, {""Line Carrier"", t" & _
-        "ype any}, {""Country code"", type text}, {""Date & time"", type datetime}, {""Customer session IDs"", type text}, {""Device ID"", type text}, {""Encrypted user ID"", type text}, {""City"", type text}, {""Country"", type text}, {""ISP"", type text}, {""IP"", type text}, {""Name"", type text}, {""Machine ID"", type any}, {""Malware Name"", type any}, {""Infected App""" & _
-        ", type any}, {""Infected Package"", type any}, {""OS"", type text}, {""Pinpoint session ID"", type text}, {""Platform"", type text}, {""PUID"", type text}, {""Assessment Details"", type text}, {""Recommendation"", type text}, {""Partial result reason"", type any}, {""Reason ID"", Int64.Type}, {""Reason"", type text}, {""Risk score"", Int64.Type}, {""Classified By""," & _
-        " type text}, {""Status"", type text}, {""Classified At"", type datetime}, {""New Device"", type logical}, {""Activity"", type text}, {""Closed By"", type any}, {""Closed At"", type any}, {""User Agent"", type text}, {""Assigned To"", type text}, {""Phishing Url"", type any}, {""Detected At"", type text}, {""SDK Configuration"", type any}, {""SDK Version"", type any}" & _
-        ", {""MRST App Count"", type any}, {""Call In Progress"", type any}, {""User Behavioral Score"", type any}, {""Risky Device"", type any}, {""Risky Connection"", type any}, {""Battery Charging"", type any}, {""Behavioral Anomaly"", type any}, {""First Seen In Account"", type datetime}, {""First Seen In Region"", type datetime}, {""Fraud MO"", type any}})" & Chr(13) & "" & Chr(10) & "in" & Chr(13) & "" & Chr(10) & "    #""Changed Type"""
     
-    Set Wbk = Workbooks.Add(xlWBATWorksheet)
-    With Wbk
-        With .Queries
-            If intNumberOfSourceFiles > 1 Then 'if more than 1 source file was found
-                .Add Name:="foo report name", _
-                    Formula:=strQueryString
-                .Add Name:="Sample File", Formula:= _
-                    "let Source = Folder.Files(""" & strDetectionRateFolderPath & """), Navigation1 = Source{0}[Content] in Navigation1"
-                .Add Name:="Parameter1", Formula:= _
-                    "#""Sample File"" meta [IsParameterQuery=true, BinaryIdentifier=#""Sample File"", Type=""Binary"", IsParameterQueryRequired=true]"
-                .Add Name:="Transform Sample File", Formula:= _
-                    "let Source = Csv.Document(Parameter1,[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"""
-                .Add Name:="Transform File", Formula:= _
-                    "let Source = (Parameter1) => let Source = Csv.Document(Parameter1,[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"" in Source"
-            Else
-                MsgBox "Adjust VBA code to handle importing a single source file"
-            End If
-        End With
-        Set shtRawData = .ActiveSheet
-        With shtRawData
-            With .ListObjects.Add(SourceType:=0, Source:= _
-            "OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=""foo report name"";Extended Properties=""""" _
+    If intNumberOfSourceFiles = 1 Then
+Stop
+        strQueryString = "let" & Chr(13) & "" & Chr(10) & "    Source = Csv.Document(File.Contents(""C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\June 2024\2024-07-10T19-14-44-risks.csv""),[Delimiter="","", Columns=65, Encoding=65001, QuoteStyle=QuoteStyle.None])," & Chr(13) & "" & Chr(10) & "    #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true])," & Chr(13) & "" & Chr(10) & "    #""Changed Type"" = Table.Transfo" & _
+        "rmColumnTypes(#""Promoted Headers"",{{""Account Id"", type text}, {""Application"", type text}, {""Browser"", type text}, {""Browser version"", type text}, {""Classification"", type text}, {""Client Language"", type text}, {""Line Carrier"", type text}, {""Country code"", type text}, {""Date & time"", type datetimezone}, {""Customer session IDs"", type text}, {""Dev" & _
+        "ice ID"", type text}, {""Encrypted user ID"", type text}, {""City"", type text}, {""Country"", type text}, {""ISP"", type text}, {""IP address"", type text}, {""Name"", type text}, {""Machine ID"", type text}, {""Malware Name"", type text}, {""Infected App"", type text}, {""Infected Package"", type text}, {""OS"", type text}, {""Pinpoint session ID"", type text}, {" & _
+        """Platform"", type text}, {""PUID"", type text}, {""Assessment Details"", type text}, {""Recommendation"", type text}, {""Partial result reason"", type text}, {""Reason ID"", Int64.Type}, {""Detailed reason"", type text}, {""Risk score"", Int64.Type}, {""Classified By"", type text}, {""Status"", type text}, {""Classified At"", type datetimezone}, {""New Device"", ty" & _
+        "pe logical}, {""Activity"", type text}, {""Closed By"", type text}, {""Closed At"", type datetimezone}, {""User Agent"", type text}, {""Assigned To"", type text}, {""Phishing URL"", type text}, {""Detected At"", type text}, {""SDK Configuration"", Int64.Type}, {""SDK Version"", type text}, {""MRST App Count"", Int64.Type}, {""Call In Progress"", type text}, {""User " & _
+        "Behavioral Score"", type text}, {""Risky Device"", type logical}, {""Risky Connection"", type logical}, {""Battery Charging"", type logical}, {""Behavioral Anomaly"", type logical}, {""Device First Seen In Account"", type datetimezone}, {""Device First Seen In Region"", type datetimezone}, {""Fraud MO"", type text}, {""Agent Key"", type text}, {""Marketing Name"", t" & _
+        "ype text}, {""Channel"", type text}, {""Transaction Amount"", type text}, {""GDID PUID Count Until Session"", Int64.Type}, {""Credentials submitted"", type logical}, {""Reason"", type text}, {""Device language"", type text}, {""Known risky payee"", type text}, {""New location"", type logical}, {""Transaction type"", type text}})" & Chr(13) & "" & Chr(10) & "in" & Chr(13) & "" & Chr(10) & "    #""Changed Type"""
+    
+        ActiveWorkbook.Worksheets.Add
+        With ActiveSheet.ListObjects.Add(SourceType:=0, Source:= _
+            "OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=2024-07-10T19-14-44-risks;Extended Properties=""""" _
             , Destination:=Range("$A$1")).QueryTable
             .CommandType = xlCmdSql
-            .CommandText = Array("SELECT * FROM [foo report name]")
+            .CommandText = Array("SELECT * FROM [2024-07-10T19-14-44-risks]")
+            .RowNumbers = False
+            .FillAdjacentFormulas = False
+            .PreserveFormatting = True
+            .RefreshOnFileOpen = False
+            .BackgroundQuery = True
+            .RefreshStyle = xlInsertDeleteCells
+            .SavePassword = False
+            .SaveData = True
+            .AdjustColumnWidth = True
+            .RefreshPeriod = 0
+            .PreserveColumnInfo = True
+            .ListObject.DisplayName = "_2024_07_10T19_14_44_risks"
             .Refresh BackgroundQuery:=False
-            End With
-            .Name = "Raw Data"
         End With
+    
+    ElseIf intNumberOfSourceFiles > 1 Then
+        strQueryString = "let" & Chr(13) & "" & Chr(10) & "    Source = Folder.Files(""" & strDetectionRateFolderPath & """)," & Chr(13) & "" & Chr(10) & "    #""Filtered Hidden Files1"" = Table.SelectRows(Source, each [Attributes]?[Hidden]? <> true)," & Chr(13) & "" & Chr(10) & "    #""Invoke Custom Function1"" = Table.AddColumn(#""Filtered Hidden Files1"", ""Transform File"", each #""Transform File""([Content]))," & Chr(13) & "" & Chr(10) & "    #""Renamed Colum" & _
+            "ns1"" = Table.RenameColumns(#""Invoke Custom Function1"", {""Name"", ""Source.Name""})," & Chr(13) & "" & Chr(10) & "    #""Removed Other Columns1"" = Table.SelectColumns(#""Renamed Columns1"", {""Source.Name"", ""Transform File""})," & Chr(13) & "" & Chr(10) & "    #""Expanded Table Column1"" = Table.ExpandTableColumn(#""Removed Other Columns1"", ""Transform File"", Table.ColumnNames(#""Transform File""(#""Sample File""" & _
+            ")))," & Chr(13) & "" & Chr(10) & "    #""Changed Type"" = Table.TransformColumnTypes(#""Expanded Table Column1"",{{""Source.Name"", type text}, {""Account Id"", type text}, {""Application"", type text}, {""Browser"", type text}, {""Browser version"", type text}, {""Classification"", type text}, {""Client Language"", type text}, {""Line Carrier"", type text}, {""Country code"", type text}, {""D" & _
+            "ate & time"", type datetimezone}, {""Customer session IDs"", type text}, {""Device ID"", type text}, {""Encrypted user ID"", type text}, {""City"", type text}, {""Country"", type text}, {""ISP"", type text}, {""IP address"", type text}, {""Name"", type text}, {""Machine ID"", type text}, {""Malware Name"", type text}, {""Infected App"", type text}, {""Infected Packa" & _
+            "ge"", type text}, {""OS"", type text}, {""Pinpoint session ID"", type text}, {""Platform"", type text}, {""PUID"", type text}, {""Assessment Details"", type text}, {""Recommendation"", type text}, {""Partial result reason"", type any}, {""Reason ID"", Int64.Type}, {""Detailed reason"", type text}, {""Risk score"", Int64.Type}, {""Classified By"", type text}, {""Stat" & _
+            "us"", type text}, {""Classified At"", type datetime}, {""New Device"", type logical}, {""Activity"", type text}, {""Closed By"", type any}, {""Closed At"", type any}, {""User Agent"", type text}, {""Assigned To"", type text}, {""Phishing URL"", type any}, {""Detected At"", type text}, {""SDK Configuration"", Int64.Type}, {""SDK Version"", type text}, {""MRST App Cou" & _
+            "nt"", Int64.Type}, {""Call In Progress"", type text}, {""User Behavioral Score"", type any}, {""Risky Device"", type logical}, {""Risky Connection"", type logical}, {""Battery Charging"", type logical}, {""Behavioral Anomaly"", type logical}, {""Device First Seen In Account"", type datetimezone}, {""Device First Seen In Region"", type datetimezone}, {""Fraud MO"", t" & _
+            "ype text}, {""Agent Key"", type text}, {""Marketing Name"", type text}, {""Channel"", type text}, {""Transaction Amount"", type text}, {""GDID PUID Count Until Session"", Int64.Type}, {""Credentials submitted"", type logical}, {""Reason"", type text}, {""Device language"", type text}, {""Known risky payee"", type any}, {""New location"", type logical}, {""Transactio" & _
+            "n type"", type text}})" & Chr(13) & "" & Chr(10) & "in" & Chr(13) & "" & Chr(10) & "    #""Changed Type"""
         
-        Call RemoveDuplicates(shtRawData)
-        
-        arrColumnsWithExceptions = SetDataSourceType(shtRawData)
-        If Len(Join(arrColumnsWithExceptions)) = 0 Then
-            arrVarValuesRiskReasons = Array(REASON_ID__1, REASON_ID__2, REASON_ID_BLANK)
-            Call DeleteIrrelevantRecords(shtRawData, TB_COLUMN_RISK_REASON_ID, arrVarValuesRiskReasons)
-        
-            Call AddColumns(shtRawData)
-            Call CreateNationalReport(shtRawData, REPORT_NAME)
-        Else
-            MsgBox "The following columns are required for the report:" & vbNewLine & Join(arrColumnsWithExceptions, vbNewLine)
-            Exit Sub
-        End If
-    End With
-Application.ScreenUpdating = True
-    Set Wbk = Nothing
-    Set shtRawData = Nothing
+        With Wbk
+            With .Queries
+                If intNumberOfSourceFiles > 1 Then 'if more than 1 source file was found
+                    .Add Name:="foo report name", _
+                        Formula:=strQueryString
+                    .Add Name:="Sample File", Formula:= _
+                        "let Source = Folder.Files(""" & strDetectionRateFolderPath & """), Navigation1 = Source{0}[Content] in Navigation1"
+                    .Add Name:="Parameter1", Formula:= _
+                        "#""Sample File"" meta [IsParameterQuery=true, BinaryIdentifier=#""Sample File"", Type=""Binary"", IsParameterQueryRequired=true]"
+                    .Add Name:="Transform Sample File", Formula:= _
+                        "let Source = Csv.Document(Parameter1,[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"""
+                    .Add Name:="Transform File", Formula:= _
+                        "let Source = (Parameter1) => let Source = Csv.Document(Parameter1,[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"" in Source"
+                Else
+                    MsgBox "Adjust VBA code to handle importing a single source file"
+                End If
+            End With
+            Set shtRawData = .ActiveSheet
+            With shtRawData
+                With .ListObjects.Add(SourceType:=0, Source:= _
+                "OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=""foo report name"";Extended Properties=""""" _
+                , Destination:=Range("$A$1")).QueryTable
+                .CommandType = xlCmdSql
+                .CommandText = Array("SELECT * FROM [foo report name]")
+                .Refresh BackgroundQuery:=False
+                End With
+                .Name = "Raw Data"
+            End With
+        End With
+    End If
 End Sub
-
-
-'Private Function GetArrayOfMissingColumns(Sht As Worksheet, arrColumns() As Variant) As String()
-'    Dim intColumnName As Integer
-'    Dim arrColumnsWithExceptions() As String
-'    Dim intExceptionCounter As Integer
-'
-'    For intColumnName = 0 To UBound(arrColumns)
-'        If GetSheetColumnIndexByTitle(CStr(arrColumns(intColumnName)), Sht, Sht.Range("A1")) = 0 Then
-'            ReDim Preserve arrColumnsWithExceptions(intExceptionCounter)
-'            arrColumnsWithExceptions(intExceptionCounter) = CStr(arrColumns(intColumnName))
-'            intExceptionCounter = intExceptionCounter + 1
-'        End If
-'    Next intColumnName
-'    GetArrayOfMissingColumns = arrColumnsWithExceptions
-'    Erase arrColumns
-'End Function
-
-
 
 Private Sub RemoveDuplicates(shtRawData As Worksheet)
     Dim intArray As Variant, i As Integer
@@ -183,7 +353,7 @@ Private Sub RemoveDuplicates(shtRawData As Worksheet)
     End With
 End Sub
 
-Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
+Private Function CreatePivotReport(shtRawData As Worksheet, ReportName As String)
     Dim pvt As PivotTable
     Dim shtCustomReport As Worksheet
     Dim strColumnSetFormula As String
@@ -196,182 +366,62 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
     Dim lngColOffset As Long
     Dim Sht As Worksheet
     Dim rngWithCalculatedItem As Range
+    Dim arrVarValuesRiskReasons() As Variant
     
     Set pvt = GetPivotTable(shtRawData, ReportName) 'Create pivot table
     Set shtCustomReport = ActiveWorkbook.ActiveSheet
     shtCustomReport.Name = ReportName
 
-    'Create report "distinct PPSID/PUID by week"
-    With pvt
-        .ClearTable
-        .ColumnGrand = False
-        .RowGrand = False
-
-        With .AddDataField(.PivotFields(COLUMN_HELPER_PPSID_WEEK), "Distinct PPSID", xlSum)
-            .NumberFormat = "#,##0"
-        End With
-        
-        With .AddDataField(.PivotFields(COLUMN_HELPER_PUID_WEEK), "Distinct PUID", xlSum)
-            .NumberFormat = "#,##0"
-        End With
-        
-        .DataPivotField.Orientation = xlRowField
-        
-        .PivotFields("Year").Orientation = xlColumnField
-        .PivotFields("Week").Orientation = xlColumnField
-        
-        Call RemovePivotTableSubtotals(pvt)
-        .RepeatAllLabels xlRepeatLabels
-    End With
-
-    Set shtNational = Worksheets.Add
-    
-    With shtNational
-        'Convert values from pivot table to the new worksheet
-        Call CopyValues(pvt.TableRange1, Destination:=.Cells(1))
-        
-        .Rows(1).Delete
-        'Merge cells containing same value
-        Call MergeSameCells(Application.Intersect(.UsedRange, .Rows(1)))
-    
-        Call ChartAlertEvolution(shtNational)
-        Set chartObjAlertEvolution = .ChartObjects(.ChartObjects.count)
-        
-        Set rngWeeklyRRSessionCounts = .Range(chartObjAlertEvolution.BottomRightCell.Address).End(xlToLeft).Offset(1)
-        .Name = "National"
-    End With
-    
-    With pvt
-        'Reset pivot table
-        .ClearTable
-        .ColumnGrand = False
-        .RowGrand = False
-
-        With .AddDataField(.PivotFields(COLUMN_HELPER_PPSID_WEEK_REASONID), "Distinct PPSID", xlSum)
-            .NumberFormat = "#,##0"
-        End With
-        
-        With .AddDataField(.PivotFields(COLUMN_HELPER_PUID_WEEK_REASONID), "Distinct PUID", xlSum)
-            .NumberFormat = "#,##0"
-        End With
-        
-        .DataPivotField.Orientation = xlRowField
-        
-        .PivotFields("Year").Orientation = xlColumnField
-        .PivotFields("Week").Orientation = xlColumnField
-        .PivotFields("Reason").Orientation = xlRowField
-        
-        Call RemovePivotTableSubtotals(pvt)
-        .RepeatAllLabels xlRepeatLabels
-    End With
-    
-    Call CopyValues(pvt.TableRange1, Destination:=rngWeeklyRRSessionCounts)
-    
-    With shtNational
-        rngWeeklyRRSessionCounts.EntireRow.Delete
-        Set rngWeeklyRRSessionCounts = .Cells(.UsedRange.SpecialCells(xlCellTypeLastCell).Row, 1).CurrentRegion
-        Call MergeSameCells(rngWeeklyRRSessionCounts.Resize(1, rngWeeklyRRSessionCounts.Columns.count))
-        
-        With rngWeeklyRRSessionCounts.Resize(rngWeeklyRRSessionCounts.Rows.count, 1).SpecialCells(xlCellTypeBlanks)
-            .FormulaR1C1 = "=R[-1]C"
-            rngWeeklyRRSessionCounts.Resize(rngWeeklyRRSessionCounts.Rows.count, 1).Value2 = rngWeeklyRRSessionCounts.Resize(rngWeeklyRRSessionCounts.Rows.count, 1).Value2
-
-        End With
-        
-        Call MergeSameCells(rngWeeklyRRSessionCounts.Resize(rngWeeklyRRSessionCounts.Rows.count, 1))
-        
-        .UsedRange.EntireColumn.AutoFit
-        
-        Set rngWeeklyRR_TP_RATE_SESSION = .Cells(.UsedRange.Rows.count, 1).Offset(2)
-    End With
-    
-'''''''''''
-    With pvt
-        .ClearTable
-        .ColumnGrand = False
-        .RowGrand = False
-
-        .PivotFields("Year").Orientation = xlColumnField
-        .PivotFields("Week").Orientation = xlColumnField
-        
-        With .AddDataField(.PivotFields("Pinpoint session ID"), "Count of Pinpoint session ID", xlCount)
-            .NumberFormat = "0%"
-        End With
-        
-        .PivotFields("Classification").Orientation = xlColumnField
-        .PivotFields("Reason").Orientation = xlRowField
-        .PivotFields(StrColumnApplication).Orientation = xlPageField
-        
-        .PivotFields("Classification").CalculatedItems.Add "Precision", "=confirmed_fraud / (confirmed_fraud + confirmed_legitimate)", True
-        .PivotFields("Classification").CalculatedItems("Precision").StandardFormula = "=confirmed_fraud / (confirmed_fraud + confirmed_legitimate)"
-        With .PivotFields("Classification")
-            .PivotItems("confirmed_fraud").Visible = False
-            .PivotItems("confirmed_legitimate").Visible = False
-            .PivotItems("pending_confirmation").Visible = False
-            .PivotItems("undetermined").Visible = False
-        End With
-        Call RemovePivotTableSubtotals(pvt)
-        .RepeatAllLabels xlRepeatLabels
-        lngRowOffset = .DataBodyRange.Row - .TableRange1.Row - 1
-    End With
-    
-    Call CopyValues(pvt.TableRange1.Resize(, pvt.TableRange1.Columns.count - 1), Destination:=rngWeeklyRR_TP_RATE_SESSION)
-    
-    With shtNational
-        With rngWeeklyRR_TP_RATE_SESSION.Cells(1)
-            .Offset(3).EntireRow.Delete
-            .EntireRow.Delete
-        End With
-        
-        Set rngWeeklyRR_TP_RATE_SESSION = .Cells(.UsedRange.SpecialCells(xlCellTypeLastCell).Row, 1).CurrentRegion
-'Stop
-        
-        'Implement sub 'RemoveDivisionByZeroColumns' properly
-        
-        Call MergeSameCells(rngWeeklyRR_TP_RATE_SESSION.Resize(1, rngWeeklyRR_TP_RATE_SESSION.Columns.count))
-    End With
-    
-    Set rngWeeklyRR_TP_RATE_SESSION = rngWeeklyRR_TP_RATE_SESSION.CurrentRegion
-    With rngWeeklyRR_TP_RATE_SESSION.Offset(lngRowOffset).Resize(rngWeeklyRR_TP_RATE_SESSION.Rows.count - lngRowOffset)
-        .NumberFormat = "0%"
-    End With
-'''''''''''
     With pvt
         .ClearTable
         .ColumnGrand = True
         .RowGrand = False
+        
+        With .PivotFields(TB_COLUMN_EVENT_DATE)
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        pvt.RowFields(1).DataRange.Range("A1").Group Start:=True, End:=True, Periods:=Array(False, False, False, False, True, False, False)
+        With .PivotFields("Months (Date & time)")
+            .Orientation = xlColumnField
+            .Position = 1
+        End With
+        
+        With .PivotFields("Classification")
+            .Orientation = xlColumnField
+            .Position = 1
+        End With
+        
+        Set PvtField = .PivotFields("Reason ID")
+        With PvtField
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        arrVarValuesRiskReasons = Array(REASON_ID__1, REASON_ID__2, REASON_ID_BLANK)
+TimeMeasurer.StartCounter
+        Call filterOutIrrelevantRecords(PvtField, arrVarValuesRiskReasons)
+Debug.Print "filterOutIrrelevantRecords: " & TimeMeasurer.TimeElapsed
 
-        With .AddDataField(.PivotFields(COLUMN_HELPER_PPSID_WEEK_REASONID), "Distinct PPSID", xlSum)
+        With .PivotFields("Reason")
+            .Orientation = xlRowField
+            .Position = 2
+        End With
+        With .AddDataField(.PivotFields(TB_COLUMN_SESSION), "PPSIDs", xlCount)
             .NumberFormat = "#,##0"
         End With
         
-        With .AddDataField(.PivotFields(COLUMN_HELPER_PUID_WEEK_REASONID), "Distinct PUID", xlSum)
-            .NumberFormat = "#,##0"
+        With .PivotFields("Risk score")
+            .Orientation = xlRowField
+            .Position = 3
         End With
         
-        .DataPivotField.Orientation = xlRowField
-        
-        .PivotFields("Year").Orientation = xlColumnField
-        .PivotFields("Week").Orientation = xlColumnField
-        .PivotFields("Classification").Orientation = xlRowField
-        
-        .PivotFields(StrColumnApplication).Orientation = xlPageField
-
         Call RemovePivotTableSubtotals(pvt)
-        .RepeatAllLabels xlRepeatLabels
-        .ShowPages PageField:="Application"
     End With
-    
-    For Each Sht In ActiveWorkbook.Worksheets
-        If Sht.PivotTables.count > 0 Then
-            Sht.PivotTables(1).TableRange2.EntireColumn.AutoFit
-        End If
-    Next Sht
+    Set CreatePivotReport = pvt
     
     Set pvt = Nothing
     Set shtCustomReport = Nothing
-    Set shtNational = Nothing
-End Sub
+End Function
 
 Private Sub ChartAlertEvolution(shtNational As Worksheet)
     Dim Chrt As Chart
@@ -811,7 +861,7 @@ Private Function AutoFilterRecordsFound(Sht As Worksheet) As Boolean
     End With
 End Function
 
-Sub RemovePivotTableSubtotals(pt As PivotTable)
+Private Sub RemovePivotTableSubtotals(pt As PivotTable)
     Dim PvtField As PivotField
     
     On Error Resume Next
@@ -819,9 +869,6 @@ Sub RemovePivotTableSubtotals(pt As PivotTable)
         If PvtField.Orientation = xlColumnField Or PvtField.Orientation = xlRowField Then
             With PvtField
                 .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
-                If LCase(PvtField.Name) <> "year" And LCase(PvtField.Name) <> "week" Then
-                    .ShowAllItems = True
-                End If
             End With
         End If
         Err.Clear
@@ -829,7 +876,7 @@ Sub RemovePivotTableSubtotals(pt As PivotTable)
     On Error GoTo 0
 End Sub
 
-Sub RemoveDivisionByZeroColumns()
+Private Sub RemoveDivisionByZeroColumns()
     Dim lngAreasCount As Long
     Dim lngColIndex As Long
     Dim rngData As Range
@@ -845,3 +892,7 @@ Sub RemoveDivisionByZeroColumns()
         End If
     Next lngColIndex
 End Sub
+
+
+
+

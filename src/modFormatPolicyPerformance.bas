@@ -1,4 +1,4 @@
-Attribute VB_Name = "Module1"
+Attribute VB_Name = "modFormatPolicyPerformance"
 Option Explicit
 
 Sub FormatPolicyPerformance()
@@ -13,6 +13,9 @@ Sub FormatPolicyPerformance()
     
     Call SplitWorksheetsByColumnValues("calendar_week", ActiveSheet)
     
+    ActiveWorkbook.ApplyTheme ( _
+        "C:\Program Files\Microsoft Office\root\Document Themes 16\Office 2013 - 2022 Theme.thmx")
+
     For Each Sht In ActiveWorkbook.Worksheets
         If Sht.Name <> shtActive.Name Then
             Sht.Select
@@ -21,16 +24,6 @@ Sub FormatPolicyPerformance()
                 Set rngLastRowCells = .Rows(.Rows.count)
                 .HorizontalAlignment = xlCenter
                 .Font.Color = vbWhite
-'                varArrColumnTitles = Array("confirmed_fraud_sessions", "total_sessions", "confirmed_fraud_puids", "total_puids")
-'                For i = 0 To UBound(varArrColumnTitles)
-'                    Cells(rngLastRowCells.Row, GetSheetColumnIndexByTitle(CStr(varArrColumnTitles(i)), Sht)).FormulaR1C1 = "=SUM(R2C:R[-1]C)"
-'                Next i
-            
-'                varArrColumnTitles = Array("session_precision_prc", "puid_precision_prc")
-'                For i = 0 To UBound(varArrColumnTitles)
-'                    Cells(rngLastRowCells.Row, GetSheetColumnIndexByTitle(CStr(varArrColumnTitles(i)), Sht)).FormulaR1C1 = "=RC[-2]/RC[-1]"
-'                    Sht.Columns(GetSheetColumnIndexByTitle(CStr(varArrColumnTitles(i)), Sht)).Style = "Percent"
-'                Next i
             
                 varArrColumnTitles = Array("confirmed_fraud_sessions", "confirmed_fraud_puids")
                 For i = 0 To UBound(varArrColumnTitles)

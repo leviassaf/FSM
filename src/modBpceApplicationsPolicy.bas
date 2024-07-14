@@ -4,12 +4,12 @@ Option Explicit
 Public Const MAX_SHEET_NAME_LENGTH As Integer = 31
 
 Sub BpceApplicationsPolicy()
-    Dim wbk As Workbook
+    Dim Wbk As Workbook
     Dim shtRawData As Worksheet
     Dim strDetectionRateFolderPath As String
     Dim strBoxPath As String
     Dim arrColumnsWithExceptions As Variant
-    Dim Pvt As PivotTable
+    Dim pvt As PivotTable
     Const REPORT_NAME As String = "Pivot Table"
     Dim intNumberOfSourceFiles As Integer
     Dim strQueryString As String
@@ -34,8 +34,8 @@ Sub BpceApplicationsPolicy()
         "in" & vbNewLine & _
         "    #""Changed Type"""
 
-    Set wbk = Workbooks.Add(xlWBATWorksheet)
-    With wbk
+    Set Wbk = Workbooks.Add(xlWBATWorksheet)
+    With Wbk
         With .Queries
             If intNumberOfSourceFiles > 1 Then 'if more than 1 source file was found
                 .Add Name:="foo report name", _
@@ -68,8 +68,8 @@ Sub BpceApplicationsPolicy()
         Call ActiveReasonsPerActivityInternal
         
         Set shtPivot = ActiveSheet
-        Set Pvt = shtPivot.PivotTables(1)
-        With Pvt
+        Set pvt = shtPivot.PivotTables(1)
+        With pvt
             With .PivotFields("Source.Name")
                 .Orientation = xlPageField
                 .Position = 1
@@ -88,7 +88,7 @@ Sub BpceApplicationsPolicy()
     Application.DisplayAlerts = True
     
     For Each shtApplicationPivot In Worksheets
-        Call CreateCustomerFacingActiveReasons(Pvt, shtApplicationPivot)
+        Call CreateCustomerFacingActiveReasons(pvt, shtApplicationPivot)
         
         strApplicationName = shtApplicationPivot.Name
         Application.DisplayAlerts = False
@@ -100,7 +100,7 @@ Sub BpceApplicationsPolicy()
 '    strFileName = PrintToPDF
 Application.ScreenUpdating = True
 '    MsgBox "File is saved at:" & vbNewLine & strFileName
-    Set wbk = Nothing
+    Set Wbk = Nothing
     Set shtRawData = Nothing
 End Sub
 

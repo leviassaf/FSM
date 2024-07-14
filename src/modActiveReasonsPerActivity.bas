@@ -2,19 +2,19 @@ Attribute VB_Name = "modActiveReasonsPerActivity"
 Option Explicit
 
 Sub ActiveReasonsPerActivity()
-    Dim Pvt As PivotTable
+    Dim pvt As PivotTable
     Dim shtPivot As Worksheet
     
     Call ActiveReasonsPerActivityInternal
     Set shtPivot = ActiveSheet
-    Set Pvt = shtPivot.PivotTables(1)
-    Call CreateCustomerFacingActiveReasons(Pvt, shtPivot)
+    Set pvt = shtPivot.PivotTables(1)
+    Call CreateCustomerFacingActiveReasons(pvt, shtPivot)
 End Sub
 
 Sub ActiveReasonsPerActivityInternal()
     Dim shtRawData As Worksheet
     Dim Lst As ListObject
-    Dim Pvt As PivotTable
+    Dim pvt As PivotTable
     Dim shtPivot As Worksheet
     Dim rngFilteredRanges As Range
     Dim lngContiguousRangeIndex As Long
@@ -25,6 +25,9 @@ Sub ActiveReasonsPerActivityInternal()
     Dim arrVarColumnReason() As Variant
     Dim pvtItem As PivotItem
     
+    ActiveWorkbook.ApplyTheme ( _
+        "C:\Program Files\Microsoft Office\root\Document Themes 16\Office 2013 - 2022 Theme.thmx")
+
     Set shtRawData = ActiveSheet
     ThisWorkbook.Sheets("Pinpoint Reason Reference").Copy Before:=ActiveWorkbook.Sheets(1)
         arrColumnsWithExceptions = GetMissingColumns(shtRawData, enumDataSource.datasourceAutobot)
@@ -54,9 +57,9 @@ Sub ActiveReasonsPerActivityInternal()
             
             ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=shtRawData.Range("A1").CurrentRegion, Version:=6). _
                 CreatePivotTable TableDestination:=shtPivot.Cells(3, 1), DefaultVersion:=6
-            Set Pvt = ActiveSheet.PivotTables(1)
+            Set pvt = ActiveSheet.PivotTables(1)
             
-            With Pvt
+            With pvt
                 .InGridDropZones = True
                 .RowAxisLayout xlTabularRow
                 .ColumnGrand = False
@@ -156,7 +159,7 @@ Private Function GetSheetColumnIndexByTitle(ColumnTitle As String, Optional Sht 
     Set rngHeader = Nothing
 End Function
 
-Sub CreateCustomerFacingActiveReasons(Pvt As PivotTable, shtSource As Worksheet)
+Sub CreateCustomerFacingActiveReasons(pvt As PivotTable, shtSource As Worksheet)
     Dim rngSource As Range
     Dim rngDestination As Range
     Dim shtDestination As Worksheet
@@ -166,9 +169,9 @@ Sub CreateCustomerFacingActiveReasons(Pvt As PivotTable, shtSource As Worksheet)
     Dim strDestDataBodyRangeAddress As String
     
     Set shtDestination = Worksheets.Add
-    Set Pvt = shtSource.PivotTables(1)
-    Set rngSource = Pvt.TableRange1
-    strDestDataBodyRangeAddress = Pvt.DataBodyRange.Offset(-2 - Pvt.PageFields.count).Address
+    Set pvt = shtSource.PivotTables(1)
+    Set rngSource = pvt.TableRange1
+    strDestDataBodyRangeAddress = pvt.DataBodyRange.Offset(-2 - pvt.PageFields.count).Address
     lngSourceRowsCount = rngSource.Rows.count - 1
     lngSourceColumnsCount = rngSource.Columns.count
     Set rngSource = rngSource.Offset(1).Resize(lngSourceRowsCount, lngSourceColumnsCount)

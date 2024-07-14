@@ -15,17 +15,17 @@ Attribute GetTablesForSessionId.VB_ProcData.VB_Invoke_Func = "S\n14"
     Dim msgBoxResult As VbMsgBoxResult
     
     msgBoxResult = vbYes
-    Do While msgBoxResult = vbYes
-        If Not isLANCableconnected Then
-            msgBoxResult = MsgBox( _
-                "You must be connected via a LAN cable from the IBM Office." & vbNewLine & _
-                "Would you like to retry?", vbYesNo, "Session ID Analysis" _
-            )
-            If msgBoxResult = vbNo Then Exit Sub
-        Else
-            Exit Do
-        End If
-    Loop
+'    Do While msgBoxResult = vbYes
+'        If Not isLANCableconnected Then
+'            msgBoxResult = MsgBox( _
+'                "You must be connected via a LAN cable from the IBM Office." & vbNewLine & _
+'                "Would you like to retry?", vbYesNo, "Session ID Analysis" _
+'            )
+'            If msgBoxResult = vbNo Then Exit Sub
+'        Else
+'            Exit Do
+'        End If
+'    Loop
     
 '    strDSN = Application.InputBox("Type the DSN to extract Redshift data: ", "Session ID Analysis", "Redshift_US", Type:=2)
     strDSN = "Redshift_EU"
@@ -73,10 +73,12 @@ Attribute GetTablesForSessionId.VB_ProcData.VB_Invoke_Func = "S\n14"
                 shtNew.Name = "policy_results"
             Case 2:
                 shtNew.Name = "policy_invocation_stats"
+            Case 3:
+                shtNew.Name = "sessions_info"
             End Select
         Else
             Set shtNew = wbkReport.ActiveSheet
-            shtNew.Name = "sessions_info"
+            shtNew.Name = "Unknown table table"
         End If
         Set Qry = CreateQueryTable(shtNew, strDSN)
         With Qry

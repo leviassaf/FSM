@@ -51,12 +51,12 @@ Public Const REPORT_CLASSIFICATIONS_BY_RISK_REASON As String = "Classifications 
 Public Const REPORT_REASONS_FOR_FOREIGN_COUNTRIES As String = "Reasons For Foreign Countries"
 
 
-Public Sub SetPivotTableLayout(Pvt As PivotTable, ReportID As enumReport)
+Public Sub SetPivotTableLayout(pvt As PivotTable, ReportID As enumReport)
     Dim cubfldDistinctsessions As CubeField
     
     Select Case ReportID
     Case enumReport.reportClassificationsByRiskReason
-        With Pvt
+        With pvt
             With .CubeFields("[Range].[Reason ID]")
                 .Orientation = xlRowField
                 .PivotFields(1).Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
@@ -71,7 +71,7 @@ Public Sub SetPivotTableLayout(Pvt As PivotTable, ReportID As enumReport)
             .AddDataField cubfldDistinctsessions
         End With
     Case enumReport.reportReasonsForForeignCountries
-        With Pvt
+        With pvt
             With .CubeFields("[Range].[Reason ID]")
                 .Orientation = xlRowField
                 .PivotFields(1).Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
@@ -178,7 +178,7 @@ End Sub
 Public Function GetPivotTable(Sht As Worksheet, ByVal ReportName As String) As PivotTable
     Dim rngRawData As Range
     Dim shtPivot As Worksheet
-    Dim Pvt As PivotTable
+    Dim pvt As PivotTable
     Dim pvtCache As PivotCache
     Dim wbkConn As WorkbookConnection
 
@@ -198,11 +198,11 @@ Public Function GetPivotTable(Sht As Worksheet, ByVal ReportName As String) As P
             SourceType:=xlExternal, _
             SourceData:=wbkConn, _
             Version:=6)
-        Set Pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), _
+        Set pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), _
                 TableName:=ReportName, DefaultVersion:=6)
     End With
     
-    With Pvt
+    With pvt
         .ColumnGrand = True
         .RowGrand = True
         .InGridDropZones = False
@@ -211,11 +211,11 @@ Public Function GetPivotTable(Sht As Worksheet, ByVal ReportName As String) As P
         .NullString = "0"
     End With
     
-    Set GetPivotTable = Pvt
+    Set GetPivotTable = pvt
 
     Set rngRawData = Nothing
     Set shtPivot = Nothing
-    Set Pvt = Nothing
+    Set pvt = Nothing
     Set pvtCache = Nothing
     Set wbkConn = Nothing
 End Function
@@ -325,7 +325,7 @@ Public Sub DataCleanupTrustboard(Sht As Worksheet)
 End Sub
 
 Public Sub RunReportTrustboard(Report As enumReport)
-    Dim Pvt As PivotTable
+    Dim pvt As PivotTable
     Dim shtRawData As Worksheet
     Dim arrColumnsWithExceptions As Variant
     
@@ -336,11 +336,11 @@ Public Sub RunReportTrustboard(Report As enumReport)
         
         Select Case Report
         Case enumReport.reportClassificationsByRiskReason
-            Set Pvt = GetPivotTable(shtRawData, GetReportName(reportClassificationsByRiskReason))
-            Call SetPivotTableLayout(Pvt, enumReport.reportClassificationsByRiskReason)
+            Set pvt = GetPivotTable(shtRawData, GetReportName(reportClassificationsByRiskReason))
+            Call SetPivotTableLayout(pvt, enumReport.reportClassificationsByRiskReason)
         Case enumReport.reportReasonsForForeignCountries
-            Set Pvt = GetPivotTable(shtRawData, GetReportName(reportReasonsForForeignCountries))
-            Call SetPivotTableLayout(Pvt, enumReport.reportReasonsForForeignCountries)
+            Set pvt = GetPivotTable(shtRawData, GetReportName(reportReasonsForForeignCountries))
+            Call SetPivotTableLayout(pvt, enumReport.reportReasonsForForeignCountries)
         End Select
 
     Else

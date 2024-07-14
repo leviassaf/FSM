@@ -52,7 +52,7 @@ Attribute FreeRedshiftQuery.VB_ProcData.VB_Invoke_Func = "R\n14"
         For Each Sht In Worksheets
             Call CreateChart(Sht)
         Next Sht
-        
+
         Application.ScreenUpdating = True
 '    Else
 '        If InStr(strErrorDescription, "cancelled on user's request") <> 0 Then
