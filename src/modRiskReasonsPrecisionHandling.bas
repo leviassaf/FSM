@@ -1,4 +1,4 @@
-Attribute VB_Name = "modFpReporting"
+Attribute VB_Name = "modRiskReasonsPrecisionHandling"
 Option Explicit
 
 '  ********* Columns *********
@@ -111,6 +111,10 @@ Private Sub createChannelReports(Pvt As PivotTable)
     Dim PvtField As PivotField
     
     With Pvt
+        Set shtReport = ConvertPivotToTable(Pvt)
+        
+        Call AddWorksheetEventCode(ActiveWorkbook, shtReport, "FollowHyperlink")
+      
         .PivotFields("Channel").CurrentPage = "mobile"
         Set shtReport = ConvertPivotToTable(Pvt)
         
@@ -143,7 +147,7 @@ Private Sub createHyperlinks(Sht As Worksheet, HyperlinksRange As Range)
     Dim Cel As Range
     
     For Each Cel In HyperlinksRange
-        Sht.Hyperlinks.Add Anchor:=Cel, Address:="", SubAddress:=Sht.Name & "!" & Cel.Address(False, False, xlA1)
+        Sht.Hyperlinks.Add Anchor:=Cel, Address:="", SubAddress:="'" & Sht.Name & "'!" & Cel.Address(False, False, xlA1)
     Next Cel
 End Sub
 
@@ -152,6 +156,7 @@ Private Function ConvertPivotToTable(Pvt As PivotTable) As Worksheet
     Dim rngSort As Range
     Dim rngSortKey As Range
     Dim lngLastRowIndex As Long
+    Dim rngDataBody As Range
 
     Set shtReport = Worksheets.Add
 
@@ -219,10 +224,12 @@ Private Function ConvertPivotToTable(Pvt As PivotTable) As Worksheet
             .Apply
         End With
 
-        .Rows("1:3").Insert Shift:=xlDown
         .UsedRange.EntireColumn.AutoFit
-'Stop
-        Call createHyperlinks(shtReport, Application.Intersect(.Range("D:K"), .UsedRange).SpecialCells(xlCellTypeConstants, 1))
+        
+        Set rngDataBody = Application.Intersect(.Range("D:K"), .UsedRange)
+        Set rngDataBody = rngDataBody.Resize(rngDataBody.Rows.count - 1).SpecialCells(xlCellTypeConstants, 1)
+        
+        Call createHyperlinks(shtReport, rngDataBody)
         
     End With
     Set ConvertPivotToTable = shtReport
@@ -240,6 +247,17 @@ Private Sub ApplyConditionFormat(RngToFormat As Range)
         .FormatConditions.AddIconSetCondition
         With .FormatConditions(1)
             .IconSet = ActiveWorkbook.IconSets(xl3Arrows)
+        
+            With .IconCriteria(2)
+                .Type = xlConditionValueNumber
+                .Value = 0
+                .Operator = 7
+            End With
+            With .IconCriteria(3)
+                .Type = xlConditionValueNumber
+                .Value = 0.1
+                .Operator = 7
+            End With
         End With
     End With
 End Sub
@@ -294,9 +312,11 @@ Private Sub importData(Wbk As Workbook)
     Dim strQueryString As String
     
 '    strBoxPath = Environ("UserProfile") & Application.PathSeparator & "Box" & Application.PathSeparator & "Trusteer\Reporting\VBA Projects\FP Monitoring\LCL"
-'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\May 2024"
-    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\LCL\June 2024"
 '    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\June 2024"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\July 2024"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\LCL"
+    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\August 2024"
+
     If strDetectionRateFolderPath = "False" Then Exit Sub
     Application.ScreenUpdating = False
     intNumberOfSourceFiles = CountFilesInFolder(strDetectionRateFolderPath)
@@ -1025,14 +1045,71 @@ Public Sub AddWorksheetEventCode(Wbk As Workbook, Sht As Worksheet, EventName As
         .InsertLines lngLine, "Function GetPivotDataRange(ClassificationValue As Range, ReasonID As Long, RiskScore As Long, MonthIndex As Long, Channel As String) As Range"
         
         lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim Pvt As PivotTable"
+        
+        lngLine = lngLine + 1
+        lngLine = lngLine + 1
         .InsertLines lngLine, "Dim rngTableItem As Range"
         
         lngLine = lngLine + 1
+        .InsertLines lngLine, "Dim shtPivot As Worksheet"
+        
         lngLine = lngLine + 1
-        .InsertLines lngLine, "ActiveWorkbook.Worksheets(""Pivot Table"").Select"
+        .InsertLines lngLine, "Set shtPivot = ActiveWorkbook.Worksheets(""Pivot Table"")"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set Pvt = shtPivot.PivotTables(1)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Select Case Channel"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Case ""online"", ""mobile"":"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "With Pvt.PivotFields(""Channel"")"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, ".Orientation = xlRowField"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, ".Position = 1"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "End With"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "shtPivot.Select"
         
         lngLine = lngLine + 1
         .InsertLines lngLine, "Set rngTableItem = ActiveSheet.PivotTables(1).GetPivotData(""Pinpoint session ID"", ""Classification"", ClassificationValue, ""Reason ID"", ReasonID, ""Risk score"", RiskScore, ""Months (Date & time)"", MonthIndex, ""Channel"", Channel)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Case ""(All)"":"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "If Pvt.PivotFields(""Channel"").Orientation <> xlHidden Then"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Pvt.PivotFields(""Channel"").Orientation = xlHidden"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "End If"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "shtPivot.Select"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "Set rngTableItem = ActiveSheet.PivotTables(1).GetPivotData(""Pinpoint session ID"", ""Classification"", ClassificationValue, ""Reason ID"", ReasonID, ""Risk score"", RiskScore, ""Months (Date & time)"", MonthIndex)"
+        
+        lngLine = lngLine + 1
+        .InsertLines lngLine, "End Select"
+        
+'        lngLine = lngLine + 1
+'        .InsertLines lngLine, "Pvt.PivotCache.Refresh"
+'
+'        lngLine = lngLine + 1
+'        .InsertLines lngLine, "DoEvents"
         
         lngLine = lngLine + 1
         .InsertLines lngLine, "Set GetPivotDataRange = rngTableItem"
