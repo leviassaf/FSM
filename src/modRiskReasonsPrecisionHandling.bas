@@ -94,6 +94,12 @@ Debug.Print "importData: " & TimeMeasurer.TimeElapsed
 TimeMeasurer.StartCounter
     Call prepareData(shtRawData)
 Debug.Print "prepareData: " & TimeMeasurer.TimeElapsed
+    Call DeleteIrrelevantRecords(shtRawData, "Reason ID", "=")
+'    ActiveSheet.ListObjects("Table_ExternalData_1").Range.AutoFilter Field:=30, Criteria1:="="
+'    Selection.SpecialCells(xlCellTypeVisible).Select
+'    Selection.EntireRow.Delete
+'    ActiveSheet.ShowAllData
+
 
 TimeMeasurer.StartCounter
         Set Pvt = CreatePivotReport(shtRawData, REPORT_NAME)
@@ -108,25 +114,25 @@ End Sub
 
 Private Sub createChannelReports(Pvt As PivotTable)
     Dim shtReport As Worksheet
-    Dim PvtField As PivotField
+    Dim pvtField As PivotField
+    Dim strChannelValue As String
+    Dim pvtItem As PivotItem
     
     With Pvt
         Set shtReport = ConvertPivotToTable(Pvt)
         
         Call AddWorksheetEventCode(ActiveWorkbook, shtReport, "FollowHyperlink")
       
-        .PivotFields("Channel").CurrentPage = "mobile"
-        Set shtReport = ConvertPivotToTable(Pvt)
-        
-        Call AddWorksheetEventCode(ActiveWorkbook, shtReport, "FollowHyperlink")
+        Set pvtField = .PivotFields("Channel")
+        For Each pvtItem In pvtField.PivotItems
+            .PivotFields("Channel").CurrentPage = pvtItem.Name
+            Set shtReport = ConvertPivotToTable(Pvt)
+            
+            Call AddWorksheetEventCode(ActiveWorkbook, shtReport, "FollowHyperlink")
+        Next pvtItem
       
-        .PivotFields("Channel").CurrentPage = "online"
-        Set shtReport = ConvertPivotToTable(Pvt)
-        
-        Call AddWorksheetEventCode(ActiveWorkbook, shtReport, "FollowHyperlink")
-      
-        Set PvtField = .PivotFields("Channel")
-        With PvtField
+        Set pvtField = .PivotFields("Channel")
+        With pvtField
             .Orientation = xlRowField
             .Position = 1
         End With
@@ -159,7 +165,7 @@ Private Function ConvertPivotToTable(Pvt As PivotTable) As Worksheet
     Dim rngDataBody As Range
 
     Set shtReport = Worksheets.Add
-
+'Stop
     With shtReport
         'Convert values from pivot table to the new worksheet
         Call CopyValues(Pvt.TableRange1, Destination:=.Cells(1))
@@ -168,16 +174,16 @@ Private Function ConvertPivotToTable(Pvt As PivotTable) As Worksheet
         Range("L1:M1").Value2 = "Grand Total"
         Range("N1:P1").Value2 = "Precision %"
         Range("Q1:S1").Value2 = "Handling %"
-        Range("L2:M2").Value2 = Range("J2:K2").Value2
-        Range("N2:O2").Value2 = Range("J2:K2").Value2
-        Range("Q2:R2").Value2 = Range("J2:K2").Value2
+        Range("L2:M2").Value2 = Range("D2:E2").Value2
+        Range("N2:O2").Value2 = Range("D2:E2").Value2
+        Range("Q2:R2").Value2 = Range("D2:E2").Value2
         Range("P2, S2").Value2 = "Evol"
         
         
         Application.Intersect(.UsedRange, Range("L:M")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=RC[-8]+RC[-6]+RC[-4]+RC[-2]"
-        Application.Intersect(.UsedRange, Range("N:O")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IFERROR(RC[-10]/(RC[-10]+RC[-8]),0)"
-        Application.Intersect(.UsedRange, Range("Q:R")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IFERROR((RC[-13]+RC[-11])/RC[-5],0)"
-        Application.Intersect(.UsedRange, Range("P:P, S:S")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IFERROR((RC[-1]-RC[-2])/RC[-2],0)"
+        Application.Intersect(.UsedRange, Range("N:O")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IFERROR(ROUND(RC[-10]/(RC[-10]+RC[-8]),2),0)"
+        Application.Intersect(.UsedRange, Range("Q:R")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IFERROR(ROUND((RC[-13]+RC[-11])/RC[-5],2),0)"
+        Application.Intersect(.UsedRange, Range("P:P, S:S")).SpecialCells(xlCellTypeBlanks).FormulaR1C1 = "=IF(AND(RC[-2]=0,RC[-1]=0),0,IF(RC[-2]=0,1,(RC[-1]-RC[-2])/RC[-2]))"
         
         .Range(Range("N1"), .Cells.SpecialCells(xlCellTypeLastCell)).SpecialCells(xlCellTypeFormulas).NumberFormat = "0%"
         
@@ -290,10 +296,10 @@ Private Sub prepareData(shtRawData As Worksheet)
 
 End Sub
 
-Private Sub filterOutIrrelevantRecords(PvtField As PivotField, arrFilterOutValues As Variant)
+Private Sub filterOutIrrelevantRecords(pvtField As PivotField, arrFilterOutValues As Variant)
     Dim intFilterOutValue As Integer
     
-    With PvtField
+    With pvtField
         For intFilterOutValue = 0 To UBound(arrFilterOutValues)
             On Error Resume Next
             .PivotItems(CStr(arrFilterOutValues(intFilterOutValue))).Visible = False
@@ -315,7 +321,13 @@ Private Sub importData(Wbk As Workbook)
 '    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\June 2024"
 '    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\July 2024"
 '    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\LCL"
-    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\August 2024"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\August 2024"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\INGIT"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\absa"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\nedbank"
+    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\anz"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\abanca"
+'    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\standardbank"
 
     If strDetectionRateFolderPath = "False" Then Exit Sub
     Application.ScreenUpdating = False
@@ -413,7 +425,7 @@ Private Function CreatePivotReport(shtRawData As Worksheet, ReportName As String
     Dim Pvt As PivotTable
     Dim shtCustomReport As Worksheet
     Dim strColumnSetFormula As String
-    Dim PvtField As PivotField
+    Dim pvtField As PivotField
     Dim shtNational As Worksheet
     Dim chartObjAlertEvolution As ChartObject
     Dim rngWeeklyRRSessionCounts As Range
@@ -448,14 +460,14 @@ Private Function CreatePivotReport(shtRawData As Worksheet, ReportName As String
             .Position = 1
         End With
         
-        Set PvtField = .PivotFields("Reason ID")
-        With PvtField
+        Set pvtField = .PivotFields("Reason ID")
+        With pvtField
             .Orientation = xlRowField
             .Position = 1
         End With
         arrVarValuesRiskReasons = Array(REASON_ID__1, REASON_ID__2, REASON_ID_BLANK)
 TimeMeasurer.StartCounter
-        Call filterOutIrrelevantRecords(PvtField, arrVarValuesRiskReasons)
+        Call filterOutIrrelevantRecords(pvtField, arrVarValuesRiskReasons)
 Debug.Print "filterOutIrrelevantRecords: " & TimeMeasurer.TimeElapsed
 
         With .PivotFields("Reason")
@@ -541,7 +553,7 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
     Dim shtPivot As Worksheet
     Dim Pvt As PivotTable
     Dim pvtCache As PivotCache
-    Dim PvtField As PivotField
+    Dim pvtField As PivotField
     
     Set rngRawData = Sht.Range("A1").CurrentRegion
     With ActiveWorkbook
@@ -565,9 +577,9 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
         .RepeatAllLabels xlRepeatLabels
         .NullString = "0"
         .RowAxisLayout xlTabularRow
-        For Each PvtField In .PivotFields
-            PvtField.Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
-        Next PvtField
+        For Each pvtField In .PivotFields
+            pvtField.Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
+        Next pvtField
     End With
     
 '    Call AddMeasures
@@ -923,17 +935,17 @@ Private Function AutoFilterRecordsFound(Sht As Worksheet) As Boolean
 End Function
 
 Private Sub RemovePivotTableSubtotals(pt As PivotTable)
-    Dim PvtField As PivotField
+    Dim pvtField As PivotField
     
     On Error Resume Next
-    For Each PvtField In pt.PivotFields
-        If PvtField.Orientation = xlColumnField Or PvtField.Orientation = xlRowField Then
-            With PvtField
+    For Each pvtField In pt.PivotFields
+        If pvtField.Orientation = xlColumnField Or pvtField.Orientation = xlRowField Then
+            With pvtField
                 .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
             End With
         End If
         Err.Clear
-    Next PvtField
+    Next pvtField
     On Error GoTo 0
 End Sub
 
@@ -1126,4 +1138,24 @@ Public Sub AddWorksheetEventCode(Wbk As Workbook, Sht As Worksheet, EventName As
     Set VBComp = Nothing
     Set CodeMod = Nothing
 End Sub
+
+Sub CheckPivotFilterValues()
+    Dim ws As Worksheet
+    Dim pt As PivotTable
+    Dim pf As PivotField
+    Dim pi As PivotItem
+    
+    ' Set the worksheet and the pivot table
+    Set ws = ActiveWorkbook.ActiveSheet ' Change "Sheet1" to your sheet name
+    Set pt = ws.PivotTables(1) ' Change "PivotTable1" to your pivot table name
+
+    ' Set the PivotField (change "Field1" to your field name in the Filters area)
+    Set pf = pt.PivotFields("Channel")
+    
+    ' Loop through each PivotItem in the PivotField and print its value
+    For Each pi In pf.PivotItems
+        Debug.Print pi.Name
+    Next pi
+End Sub
+
 

@@ -187,7 +187,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
     Dim Pvt As PivotTable
     Dim shtCustomReport As Worksheet
     Dim strColumnSetFormula As String
-    Dim PvtField As PivotField
+    Dim pvtField As PivotField
     Dim shtNational As Worksheet
     Dim chartObjAlertEvolution As ChartObject
     Dim rngWeeklyRRSessionCounts As Range
@@ -430,7 +430,7 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
     Dim shtPivot As Worksheet
     Dim Pvt As PivotTable
     Dim pvtCache As PivotCache
-    Dim PvtField As PivotField
+    Dim pvtField As PivotField
     
     Set rngRawData = Sht.Range("A1").CurrentRegion
     With ActiveWorkbook
@@ -454,9 +454,9 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
         .RepeatAllLabels xlRepeatLabels
         .NullString = "0"
         .RowAxisLayout xlTabularRow
-        For Each PvtField In .PivotFields
-            PvtField.Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
-        Next PvtField
+        For Each pvtField In .PivotFields
+            pvtField.Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
+        Next pvtField
     End With
     
 '    Call AddMeasures
@@ -812,20 +812,20 @@ Private Function AutoFilterRecordsFound(Sht As Worksheet) As Boolean
 End Function
 
 Sub RemovePivotTableSubtotals(pt As PivotTable)
-    Dim PvtField As PivotField
+    Dim pvtField As PivotField
     
     On Error Resume Next
-    For Each PvtField In pt.PivotFields
-        If PvtField.Orientation = xlColumnField Or PvtField.Orientation = xlRowField Then
-            With PvtField
+    For Each pvtField In pt.PivotFields
+        If pvtField.Orientation = xlColumnField Or pvtField.Orientation = xlRowField Then
+            With pvtField
                 .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
-                If LCase(PvtField.Name) <> "year" And LCase(PvtField.Name) <> "week" Then
+                If LCase(pvtField.Name) <> "year" And LCase(pvtField.Name) <> "week" Then
                     .ShowAllItems = True
                 End If
             End With
         End If
         Err.Clear
-    Next PvtField
+    Next pvtField
     On Error GoTo 0
 End Sub
 
