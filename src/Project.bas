@@ -78,16 +78,16 @@ End Sub
 Private Function getVBComponentFilename(ByRef component As VBComponent) As String
     Select Case component.Type
         Case vbext_ComponentType.vbext_ct_ClassModule
-            getVBComponentFilename = component.Name & ".cls"
+            getVBComponentFilename = component.name & ".cls"
             
         Case vbext_ComponentType.vbext_ct_StdModule
-            getVBComponentFilename = component.Name & ".bas"
+            getVBComponentFilename = component.name & ".bas"
             
         Case vbext_ComponentType.vbext_ct_MSForm
-            getVBComponentFilename = component.Name & ".frm"
+            getVBComponentFilename = component.name & ".frm"
             
         Case vbext_ComponentType.vbext_ct_Document
-            getVBComponentFilename = component.Name & ".cls"
+            getVBComponentFilename = component.name & ".cls"
             
         Case Else
             ' @TODO: Need to think of possible throwing an error?
@@ -98,13 +98,13 @@ Private Function getVBComponentFilename(ByRef component As VBComponent) As Strin
 End Function
 
 ' Check to see if component exits in this current Project
-Private Function componentExists(ByVal Filename As String) As Boolean
+Private Function componentExists(ByVal fileName As String) As Boolean
     Dim index As Long
     For index = 1 To thisProjectsVBComponents.count
         Dim component As VBComponent
         Set component = thisProjectsVBComponents(index)
         
-        If getVBComponentFilename(component) = Filename Then
+        If getVBComponentFilename(component) = fileName Then
             componentExists = True
             Exit Function
         End If
@@ -154,9 +154,9 @@ Public Sub DangerouslyImportComponentsFromSourceFolder()
     For Each file In fso.GetFolder(SourceDirectory).Files
         ' If the component already, it needs to be deleted in order to
         ' import the file, otherwise an error is thrown.
-        If componentExists(file.Name) And file.Name <> "Project.bas" Then
+        If componentExists(file.name) And file.name <> "Project.bas" Then
             Dim component As VBComponent
-            Set component = thisProjectsVBComponents.Item(fso.GetBaseName(file.Name))
+            Set component = thisProjectsVBComponents.item(fso.GetBaseName(file.name))
             
             ' Unable to remove document type components (Sheets, workbook)
             If component.Type <> vbext_ct_Document Then
@@ -177,9 +177,9 @@ Private Sub saftleyImportAfterCleanup()
 
     Dim file As file
     For Each file In fso.GetFolder(SourceDirectory).Files
-        If Not componentExists(file.Name) And fso.GetExtensionName(file.Name) <> "frx" Then
+        If Not componentExists(file.name) And fso.GetExtensionName(file.name) <> "frx" Then
             ' Safe to import the source file as there are no conflicts of names.
-            thisProjectsVBComponents.Import joinPaths(SourceDirectory, file.Name)
+            thisProjectsVBComponents.Import joinPaths(SourceDirectory, file.name)
         End If
     Next file
 End Sub
@@ -208,7 +208,7 @@ End Function
 ' Prints out details about a specific VBComponent. Used for
 ' @status Production
 Private Function getComponentDetails(ByRef component As VBComponent) As String
-    getComponentDetails = component.Name & vbTab _
+    getComponentDetails = component.name & vbTab _
                           & getVBComponentTypeName(component) & vbTab _
                           & getVBComponentFilename(component)
 End Function

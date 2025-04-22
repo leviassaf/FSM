@@ -38,15 +38,15 @@ Sub BpceApplicationsPolicy()
     With Wbk
         With .Queries
             If intNumberOfSourceFiles > 1 Then 'if more than 1 source file was found
-                .Add Name:="foo report name", _
-                    Formula:=strQueryString
-                .Add Name:="Sample File", Formula:= _
+                .Add name:="foo report name", _
+                    formula:=strQueryString
+                .Add name:="Sample File", formula:= _
                     "let Source = Folder.Files(""" & strDetectionRateFolderPath & """), Navigation1 = Source{0}[Content] in Navigation1"
-                .Add Name:="Parameter1", Formula:= _
+                .Add name:="Parameter1", formula:= _
                     "#""Sample File"" meta [IsParameterQuery=true, BinaryIdentifier=#""Sample File"", Type=""Binary"", IsParameterQueryRequired=true]"
-                .Add Name:="Transform Sample File", Formula:= _
+                .Add name:="Transform Sample File", formula:= _
                     "let Source = Csv.Document(Parameter1,[Delimiter="","", Columns=7, QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"""
-                .Add Name:="Transform File", Formula:= _
+                .Add name:="Transform File", formula:= _
                     "let Source = (Parameter1) => let Source = Csv.Document(Parameter1,[Delimiter="","", Columns=7, QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"" in Source"
             Else
                 MsgBox "Adjust VBA code to handle importing a single source file"
@@ -56,12 +56,12 @@ Sub BpceApplicationsPolicy()
         With shtRawData
             With .ListObjects.Add(SourceType:=0, Source:= _
             "OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=""foo report name"";Extended Properties=""""" _
-            , Destination:=Range("$A$1")).QueryTable
+            , Destination:=Range("$A$1")).queryTable
             .CommandType = xlCmdSql
             .CommandText = Array("SELECT * FROM [foo report name]")
             .Refresh BackgroundQuery:=False
             End With
-            .Name = "Raw Data"
+            .name = "Raw Data"
         End With
         Call ReplaceCsvExtensionWithNone
         
@@ -90,11 +90,11 @@ Sub BpceApplicationsPolicy()
     For Each shtApplicationPivot In Worksheets
         Call CreateCustomerFacingActiveReasons(Pvt, shtApplicationPivot)
         
-        strApplicationName = shtApplicationPivot.Name
+        strApplicationName = shtApplicationPivot.name
         Application.DisplayAlerts = False
         shtApplicationPivot.Delete
         Application.DisplayAlerts = True
-        ActiveSheet.Name = strApplicationName
+        ActiveSheet.name = strApplicationName
     Next shtApplicationPivot
 
 '    strFileName = PrintToPDF

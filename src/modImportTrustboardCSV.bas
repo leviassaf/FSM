@@ -68,11 +68,11 @@ Attribute ImportTrustboardCSV.VB_ProcData.VB_Invoke_Func = "I\n14"
     End If
     Set Wbk = Workbooks.Add(xlWBATWorksheet)
 '    ActiveWorkbook.Worksheets.Add
-    Wbk.Queries.Add Name:= _
+    Wbk.Queries.Add name:= _
         "TrustboardCSV" _
-        , Formula:=strPowerQueryFormula
+        , formula:=strPowerQueryFormula
     Set Sht = Wbk.ActiveSheet
-    With Sht.ListObjects.Add(SourceType:=0, Source:="OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=TrustboardCSV;Extended Properties=""""", Destination:=Range("$A$1")).QueryTable
+    With Sht.ListObjects.Add(SourceType:=0, Source:="OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=TrustboardCSV;Extended Properties=""""", Destination:=Range("$A$1")).queryTable
         .CommandType = xlCmdSql
         .CommandText = "SELECT * FROM TrustboardCSV"
         .Refresh BackgroundQuery:=False

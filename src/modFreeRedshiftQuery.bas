@@ -3,30 +3,15 @@ Option Explicit
 
 Sub FreeRedshiftQuery()
 Attribute FreeRedshiftQuery.VB_ProcData.VB_Invoke_Func = "R\n14"
-    Dim Qry As QueryTable
+    Dim qry As queryTable
     Dim wbkReport As Workbook
     Dim shtNew As Worksheet
     Dim strSqlQuery As String
 '    Dim strSessionId As String
-    Dim msgBoxResult As VbMsgBoxResult
 '    Dim strErrorDescription As String
     Dim Sht As Worksheet
     Dim strQueryName As String
     Dim strDSN As String
-    
-    msgBoxResult = vbYes
-    Do While msgBoxResult = vbYes
-        If Not isLANCableconnected Then
-        'If Not True Then
-            msgBoxResult = MsgBox( _
-                "You must be connected via a LAN cable from the IBM Office." & vbNewLine & _
-                "Would you like to retry?", vbYesNo, "Session ID Analysis" _
-            )
-            If msgBoxResult = vbNo Then Exit Sub
-        Else
-            Exit Do
-        End If
-    Loop
     
     strDSN = "Redshift_EU"
     strQueryName = ActiveCell.Offset(0, -1).Value2
@@ -34,24 +19,26 @@ Attribute FreeRedshiftQuery.VB_ProcData.VB_Invoke_Func = "R\n14"
 
 '    If IsSQLStatementValid(strSqlQuery, strErrorDescription) Then
 'ExecuteQuery:
-        Application.ScreenUpdating = False
-
+'        Application.ScreenUpdating = False
+'
         Set wbkReport = Workbooks.Add(xlWBATWorksheet)
         Set shtNew = wbkReport.ActiveSheet
-        Set Qry = CreateQueryTable(shtNew, strDSN)
-        With Qry
+        Set qry = CreateQueryTable(shtNew, strDSN)
+        With qry
             .CommandText = strSqlQuery
             .AdjustColumnWidth = True
             .Refresh BackgroundQuery:=False
         End With
         Call FormatDateColumns(shtNew)
-        shtNew.Name = Left(strQueryName, 31)
+        shtNew.name = Left(strQueryName, 31)
         
-        Call SplitWorksheetsByColumnValues("business", ActiveSheet)
-
-        For Each Sht In Worksheets
-            Call CreateChart(Sht)
-        Next Sht
+'**************************************
+'        Call SplitWorksheetsByColumnValues("business", ActiveSheet)
+'
+'        For Each Sht In Worksheets
+'            Call CreateChart(Sht)
+'        Next Sht
+'**************************************
 
         Application.ScreenUpdating = True
 '    Else
@@ -101,8 +88,10 @@ Public Sub CreateChart(Sht As Worksheet)
     Dim lngDateColIndex As Long
     Dim lngBaselineColIndex As Long
     Dim rngSourceData As Range
-    Dim Serie As Series
+    Dim Serie As series
     Dim dblNumberSessions As Double
+    Dim label As DataLabel
+    Dim i As Long
     
     Set MyShape = Sht.Shapes.AddChart2(201, xlColumnClustered)
     
@@ -125,9 +114,11 @@ Public Sub CreateChart(Sht As Worksheet)
             .ApplyDataLabels
         Next Serie
         
-        With .FullSeriesCollection(1)
+        Set Serie = .FullSeriesCollection(1)
+        With Serie
             .ChartType = xlColumnStacked
             .AxisGroup = 1
+            .Format.Fill.ForeColor.RGB = RGB(0, 112, 192)
         End With
         With .FullSeriesCollection(2)
             .ChartType = xlColumnStacked
@@ -145,36 +136,26 @@ Public Sub CreateChart(Sht As Worksheet)
             .TickLabels.NumberFormat = "0%"
         End With
     
-        With .FullSeriesCollection(3).DataLabels
-            .NumberFormat = "0%"
+        With .FullSeriesCollection(3)
+            .DataLabels.NumberFormat = "0%"
+            For i = 1 To .DataLabels.count
+                Set label = .DataLabels(i)
+                label.Top = MyShape.Chart.PlotArea.Top + 5
+            Next i
         End With
         
+        .ChartGroups(1).GapWidth = 30
+    
         With .FullSeriesCollection(2).DataLabels.Format.TextFrame2.TextRange.Font
-            With .Fill
-                .Visible = msoTrue
-                .ForeColor.ObjectThemeColor = msoThemeColorBackground1
-                .ForeColor.TintAndShade = 0
-                .ForeColor.Brightness = 0
-                .Transparency = 0
-                .Solid
-            End With
             .Bold = msoTrue
             .Size = 12
         End With
     
         With .FullSeriesCollection(1).DataLabels.Format.TextFrame2.TextRange.Font
-            With .Fill
-                .Visible = msoTrue
-                .ForeColor.ObjectThemeColor = msoThemeColorBackground1
-                .ForeColor.TintAndShade = 0
-                .ForeColor.Brightness = 0
-                .Transparency = 0
-                .Solid
-            End With
             .Bold = msoTrue
             .Size = 12
         End With
-    
+
         With .FullSeriesCollection(3).DataLabels.Format.TextFrame2.TextRange.Font
             .Bold = msoTrue
             .Size = 12
@@ -183,8 +164,6 @@ Public Sub CreateChart(Sht As Worksheet)
         With .Legend.Format.TextFrame2.TextRange.Font
             .Size = 12
         End With
-    
-        .ChartGroups(1).GapWidth = 100
     
         With .Axes(xlCategory)
             .TickLabels.NumberFormat = "[$-fr-FR]mmm-yy;@"

@@ -3,7 +3,7 @@ Option Explicit
 
 Sub GetTablesForSessionId()
 Attribute GetTablesForSessionId.VB_ProcData.VB_Invoke_Func = "S\n14"
-    Dim Qry As QueryTable
+    Dim qry As queryTable
     Dim wbkReport As Workbook
     Dim shtNew As Worksheet
     Dim arrSqlQueries() As Variant
@@ -70,18 +70,18 @@ Attribute GetTablesForSessionId.VB_ProcData.VB_Invoke_Func = "S\n14"
             Set shtNew = wbkReport.Worksheets.Add(count:=1, After:=Worksheets(Worksheets.count))
             Select Case intSqlQueryIndex
             Case 1:
-                shtNew.Name = "policy_results"
+                shtNew.name = "policy_results"
             Case 2:
-                shtNew.Name = "policy_invocation_stats"
+                shtNew.name = "policy_invocation_stats"
             Case 3:
-                shtNew.Name = "sessions_info"
+                shtNew.name = "sessions_info"
             End Select
         Else
             Set shtNew = wbkReport.ActiveSheet
-            shtNew.Name = "Unknown table table"
+            shtNew.name = "Unknown table table"
         End If
-        Set Qry = CreateQueryTable(shtNew, strDSN)
-        With Qry
+        Set qry = CreateQueryTable(shtNew, strDSN)
+        With qry
             .CommandText = strSqlQuery
             .AdjustColumnWidth = True
             .Refresh BackgroundQuery:=False

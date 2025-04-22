@@ -185,10 +185,10 @@ Public Function GetPivotTable(Sht As Worksheet, ByVal ReportName As String) As P
     Set rngRawData = Sht.Range("A1").CurrentRegion
     With ActiveWorkbook
         Set wbkConn = .Connections.Add2( _
-            Name:=ReportName, _
+            name:=ReportName, _
             Description:=vbNullString, _
-            ConnectionString:="WORKSHEET;" & .Path & "\[" & .Name & "]" & Sht.Name, _
-            CommandText:=Sht.Name & "!" & rngRawData.Address, _
+            ConnectionString:="WORKSHEET;" & .Path & "\[" & .name & "]" & Sht.name, _
+            CommandText:=Sht.name & "!" & rngRawData.Address, _
             lCmdtype:=xlCmdExcel, _
             CreateModelConnection:=True, _
             ImportRelationships:=False)
@@ -199,7 +199,7 @@ Public Function GetPivotTable(Sht As Worksheet, ByVal ReportName As String) As P
             SourceData:=wbkConn, _
             Version:=6)
         Set Pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), _
-                TableName:=ReportName, DefaultVersion:=6)
+                tableName:=ReportName, DefaultVersion:=6)
     End With
     
     With Pvt
@@ -279,12 +279,12 @@ Public Function AutoFilterRecordsFound(Sht As Worksheet) As Boolean
     End With
 End Function
 
-Public Function GetDataRangeForColumn(Sht As Worksheet, DataRange As Range, ColumnName As String) As Range
+Public Function GetDataRangeForColumn(Sht As Worksheet, dataRange As Range, ColumnName As String) As Range
     Dim lngColIndex As Long
     Dim rngDataNoHeaders As Range
     
-    lngColIndex = GetSheetColumnIndexByTitle(ColumnName, Sht, DataRange.Range("A1"))
-    Set rngDataNoHeaders = Sht.Range(Sht.Cells(2, lngColIndex), Sht.Cells(DataRange.Rows.count, lngColIndex))
+    lngColIndex = GetSheetColumnIndexByTitle(ColumnName, Sht, dataRange.Range("A1"))
+    Set rngDataNoHeaders = Sht.Range(Sht.Cells(2, lngColIndex), Sht.Cells(dataRange.Rows.count, lngColIndex))
     Set GetDataRangeForColumn = rngDataNoHeaders
 
     Set rngDataNoHeaders = Nothing
@@ -409,35 +409,22 @@ Public Sub FormatDateColumns(Optional Sht As Worksheet)
     Next intColumnIndex
 End Sub
 
-Public Function isLANCableconnected() As Boolean
-    Dim adapter
-    
-    For Each adapter In GetObject("winmgmts:root\CIMV2").ExecQuery("Select * from Win32_NetworkAdapter")
-        If InStr(adapter.NetConnectionID, "Ethernet") <> 0 Then
-            If adapter.NetEnabled Then
-                isLANCableconnected = True
-                Exit Function
-            End If
-        End If
-    Next
-End Function
-
-Public Function CreateQueryTable(Sht As Worksheet, DSN As String) As QueryTable
-    Dim Qry As QueryTable
+Public Function CreateQueryTable(Sht As Worksheet, DSN As String) As queryTable
+    Dim qry As queryTable
     
     'Create the QueryTable object
     Select Case Application.Version
     Case "12.0", "14.0", "15.0", "16.0":
-        Set Qry = Sht.ListObjects.Add( _
+        Set qry = Sht.ListObjects.Add( _
             SourceType:=xlSrcExternal, _
             Source:="ODBC;DSN=" & DSN & ";", _
             Destination:=Sht.Range("A1") _
-        ).QueryTable
+        ).queryTable
     Case Else
         MsgBox "Please configure QueryTable for Excel version " & Application.Version
     End Select
-    Set CreateQueryTable = Qry
-    Set Qry = Nothing
+    Set CreateQueryTable = qry
+    Set qry = Nothing
 End Function
 
 Function getCurrentMacroName() As String
@@ -528,7 +515,7 @@ Public Function SplitWorksheetsByColumnValues(FieldName As String, Sht As Worksh
     Set rRange = Application.Intersect(Sht.Columns(varColumnIndexForSplit), Sht.Range("A1").CurrentRegion)
 
     'Add a sheet called "UniqueList"
-    Worksheets.Add().Name = "UniqueList"
+    Worksheets.Add().name = "UniqueList"
 
     'Filter the Set range so only a unique list is created
      With Worksheets("UniqueList")
@@ -546,7 +533,7 @@ Public Function SplitWorksheetsByColumnValues(FieldName As String, Sht As Worksh
            strText = rCell.Value
           .Range("A1").AutoFilter lngMatchColIndex, strText
              'Add a sheet named as content of rCell
-             Worksheets.Add().Name = Left(strText, MAX_SHEET_NAME_LENGTH)
+             Worksheets.Add().name = Left(strText, MAX_SHEET_NAME_LENGTH)
              'Copy the visible filtered range (default of Copy Method) and leave hidden rows
              .Range("A1").CurrentRegion.SpecialCells(xlCellTypeVisible).Copy Destination:=ActiveSheet.Range("A1")
              ActiveSheet.Cells.Columns.AutoFit
@@ -619,28 +606,28 @@ Invalid:
     getSelectedFolder = False
 End Function
 
-Function CountFilesInFolder(FolderPath As String, Optional FileExtension As String = "csv") As Integer
-    Dim Filename As String
+Function CountFilesInFolder(folderPath As String, Optional FileExtension As String = "csv") As Integer
+    Dim fileName As String
     Dim intFileCount As Integer
     
     ' Check if the folder path ends with a backslash, if not, add it
-    If Right(FolderPath, 1) <> "\" Then
-        FolderPath = FolderPath & "\"
+    If Right(folderPath, 1) <> "\" Then
+        folderPath = folderPath & "\"
     End If
     
     ' Set the initial file count to 0
     intFileCount = 0
     
     ' Get the first file in the folder
-    Filename = Dir(FolderPath & "*." & FileExtension)
+    fileName = Dir(folderPath & "*." & FileExtension)
     
     ' Loop through all files in the folder
-    Do While Filename <> ""
+    Do While fileName <> ""
         ' Increment the file count
         intFileCount = intFileCount + 1
         
         ' Get the next file in the folder
-        Filename = Dir()
+        fileName = Dir()
     Loop
     
     CountFilesInFolder = intFileCount
@@ -661,4 +648,56 @@ Public Sub CopyValues(rngData As Range, Optional Destination As Range)
     Call ArrayToRange(arrVariant, Destination.Cells(1))
 End Sub
 
+Public Sub DeleteAllSheetsExceptActive()
+    Dim Sht As Worksheet
+    Dim shtActive As Worksheet
+    
+    ' Store the active worksheet
+    Set shtActive = ActiveSheet
+    
+    ' Disable alerts to prevent confirmation dialogs
+    Application.DisplayAlerts = False
+    
+    ' Loop through all worksheets in the workbook
+    For Each Sht In ActiveWorkbook.Worksheets
+        ' Check if the current worksheet is not the active one
+        If Sht.name <> shtActive.name Then
+            ' Delete the worksheet
+            Sht.Delete
+        End If
+    Next Sht
+    
+    ' Re-enable alerts
+    Application.DisplayAlerts = True
+End Sub
 
+Public Sub ClearExistingQueries()
+    Dim qry As WorkbookQuery
+    
+    ' Check if the query exists and delete it if it does
+    On Error Resume Next
+    For Each qry In ActiveWorkbook.Queries
+        qry.Delete
+    Next qry
+    On Error GoTo 0
+End Sub
+
+Public Function RandomUniqueString(Optional length As Integer = 10) As String
+    Dim i As Integer
+    Dim result As String
+    Dim chars As String
+    
+    ' Define characters to use (alphanumeric)
+    chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
+    
+    ' Initialize random number generator
+    Randomize
+    
+    ' Generate the random string
+    For i = 1 To length
+        result = result & Mid(chars, Int((Len(chars) * Rnd) + 1), 1)
+    Next i
+    
+    ' Add timestamp to ensure uniqueness
+    RandomUniqueString = result & Format(Now(), "yyyymmddhhnnss") & Format(Timer, "000")
+End Function

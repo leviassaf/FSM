@@ -89,7 +89,7 @@ Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = " \n14"
     Dim arrVarValuesRiskReasons() As Variant
     
     strBoxPath = Environ("UserProfile") & Application.PathSeparator & "Box" & Application.PathSeparator & "Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs"
-    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\cagricole reporting requirements\original\TB export folder containing CSVs\E"
+    strDetectionRateFolderPath = "C:\Users\919561756\Box\Trusteer\Reporting\VBA Projects\FP Monitoring\Cagricole\November 2024"
     If strDetectionRateFolderPath = "False" Then Exit Sub
     Application.ScreenUpdating = False
     intNumberOfSourceFiles = CountFilesInFolder(strDetectionRateFolderPath)
@@ -105,15 +105,15 @@ Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = " \n14"
     With Wbk
         With .Queries
             If intNumberOfSourceFiles > 1 Then 'if more than 1 source file was found
-                .Add Name:="foo report name", _
-                    Formula:=strQueryString
-                .Add Name:="Sample File", Formula:= _
+                .Add name:="foo report name", _
+                    formula:=strQueryString
+                .Add name:="Sample File", formula:= _
                     "let Source = Folder.Files(""" & strDetectionRateFolderPath & """), Navigation1 = Source{0}[Content] in Navigation1"
-                .Add Name:="Parameter1", Formula:= _
+                .Add name:="Parameter1", formula:= _
                     "#""Sample File"" meta [IsParameterQuery=true, BinaryIdentifier=#""Sample File"", Type=""Binary"", IsParameterQueryRequired=true]"
-                .Add Name:="Transform Sample File", Formula:= _
+                .Add name:="Transform Sample File", formula:= _
                     "let Source = Csv.Document(Parameter1,[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"""
-                .Add Name:="Transform File", Formula:= _
+                .Add name:="Transform File", formula:= _
                     "let Source = (Parameter1) => let Source = Csv.Document(Parameter1,[Delimiter="","", QuoteStyle=QuoteStyle.None]), #""Promoted Headers"" = Table.PromoteHeaders(Source, [PromoteAllScalars=true]) in #""Promoted Headers"" in Source"
             Else
                 MsgBox "Adjust VBA code to handle importing a single source file"
@@ -123,12 +123,12 @@ Attribute cagricole_reporting.VB_ProcData.VB_Invoke_Func = " \n14"
         With shtRawData
             With .ListObjects.Add(SourceType:=0, Source:= _
             "OLEDB;Provider=Microsoft.Mashup.OleDb.1;Data Source=$Workbook$;Location=""foo report name"";Extended Properties=""""" _
-            , Destination:=Range("$A$1")).QueryTable
+            , Destination:=Range("$A$1")).queryTable
             .CommandType = xlCmdSql
             .CommandText = Array("SELECT * FROM [foo report name]")
             .Refresh BackgroundQuery:=False
             End With
-            .Name = "Raw Data"
+            .name = "Raw Data"
         End With
         
         Call RemoveDuplicates(shtRawData)
@@ -199,7 +199,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
     
     Set Pvt = GetPivotTable(shtRawData, ReportName) 'Create pivot table
     Set shtCustomReport = ActiveWorkbook.ActiveSheet
-    shtCustomReport.Name = ReportName
+    shtCustomReport.name = ReportName
 
     'Create report "distinct PPSID/PUID by week"
     With Pvt
@@ -238,7 +238,7 @@ Private Sub CreateNationalReport(shtRawData As Worksheet, ReportName As String)
         Set chartObjAlertEvolution = .ChartObjects(.ChartObjects.count)
         
         Set rngWeeklyRRSessionCounts = .Range(chartObjAlertEvolution.BottomRightCell.Address).End(xlToLeft).Offset(1)
-        .Name = "National"
+        .name = "National"
     End With
     
     With Pvt
@@ -376,10 +376,10 @@ End Sub
 Private Sub ChartAlertEvolution(shtNational As Worksheet)
     Dim Chrt As Chart
     Dim chartObj As ChartObject
-    Dim Fsc As Series
+    Dim Fsc As series
     Dim shtPivot As Worksheet
-    Dim seriePuid As Series
-    Dim serieSession As Series
+    Dim seriePuid As series
+    Dim serieSession As series
     
     With shtNational
         Set Chrt = .Shapes.AddChart2(227, xlLine).Chart
@@ -392,15 +392,15 @@ Private Sub ChartAlertEvolution(shtNational As Worksheet)
         
         Set seriePuid = .SeriesCollection.NewSeries
         With seriePuid
-            .Name = "=" & shtNational.Name & "!$A$3"
-            .Values = "=" & shtNational.Name & "!$B$3:$F$3"
+            .name = "=" & shtNational.name & "!$A$3"
+            .Values = "=" & shtNational.name & "!$B$3:$F$3"
         End With
         
         Set serieSession = .SeriesCollection.NewSeries
         With serieSession
-            .Name = "=" & shtNational.Name & "!$A$4"
-            .Values = "=" & shtNational.Name & "!$B$4:$F$4"
-            .XValues = "=" & shtNational.Name & "!$B$1:$F$2"
+            .name = "=" & shtNational.name & "!$A$4"
+            .Values = "=" & shtNational.name & "!$B$4:$F$4"
+            .XValues = "=" & shtNational.name & "!$B$1:$F$2"
         End With
         
         .SetElement (msoElementChartTitleAboveChart)
@@ -440,7 +440,7 @@ Private Function GetPivotTable(Sht As Worksheet, Optional ReportName As String =
             SourceType:=xlDatabase, _
             SourceData:=rngRawData, _
             Version:=6)
-        Set Pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), TableName:=ReportName, DefaultVersion:=6)
+        Set Pvt = pvtCache.CreatePivotTable(TableDestination:=shtPivot.Range("A3"), tableName:=ReportName, DefaultVersion:=6)
     End With
     
     'Assign a VB codename to the Pivot Table Worksheet for future References
@@ -478,7 +478,7 @@ Private Sub AddMeasures()
     Dim formatDecimalNumber As ModelFormatDecimalNumber
     
     Set modelBook = ActiveWorkbook.Model
-    Set modelTable = modelBook.ModelTables.Item(1)
+    Set modelTable = modelBook.ModelTables.item(1)
     Set mdlMeasures = modelBook.ModelMeasures
     
     Set formatPercentage = modelBook.ModelFormatPercentageNumber
@@ -522,16 +522,16 @@ Private Sub AddMeasures()
     Set formatDecimalNumber = Nothing
 End Sub
 
-Private Function AddMeasure(MeasureName As String, Formula As String, FormatInformation As Variant) As ModelMeasure
+Private Function AddMeasure(MeasureName As String, formula As String, FormatInformation As Variant) As ModelMeasure
     Dim intMeasureIndex As Integer
     
     intMeasureIndex = GetMeasureIndex(MeasureName)
     With ActiveWorkbook.Model.ModelMeasures
         If intMeasureIndex = 0 Then
             'the following line may throw an error if powerpivot is not active (despite checked in Com-Addins)
-            Set AddMeasure = .Add(MeasureName:=MeasureName, AssociatedTable:=ActiveWorkbook.Model.ModelTables(1), Formula:=Formula, FormatInformation:=FormatInformation)
+            Set AddMeasure = .Add(MeasureName:=MeasureName, AssociatedTable:=ActiveWorkbook.Model.ModelTables(1), formula:=formula, FormatInformation:=FormatInformation)
         ElseIf intMeasureIndex > 0 Then
-            ActiveWorkbook.Model.ModelMeasures.Item(MeasureName).Formula = Formula
+            ActiveWorkbook.Model.ModelMeasures.item(MeasureName).formula = formula
         End If
     End With
 End Function
@@ -544,7 +544,7 @@ Private Function GetMeasureIndex(MeasureName As String) As Integer
     Set modelBook = ActiveWorkbook.Model
     Set modelTable = modelBook.ModelTables(1)
     For intCount = 1 To modelBook.ModelMeasures.count
-        If modelBook.ModelMeasures.Item(intCount).Name = MeasureName Then
+        If modelBook.ModelMeasures.item(intCount).name = MeasureName Then
             Exit For
         End If
     Next intCount
@@ -702,25 +702,25 @@ Private Function EnablePowerPivot() As Boolean
 End Function
 
 Private Sub MergeSameCells(WorkRange As Range)
-    Dim Cell As Range
+    Dim cell As Range
     'turn off display alerts while merging
     Application.DisplayAlerts = False
     
     'merge all same cells in range
 MergeSame:
     If WorkRange.Rows.count = 1 Then
-        For Each Cell In WorkRange
-            If Cell.Value = Cell.Offset(0, 1).Value And Not IsEmpty(Cell) Then
-                Range(Cell, Cell.Offset(0, 1)).Merge
-                Cell.HorizontalAlignment = xlCenter
+        For Each cell In WorkRange
+            If cell.Value = cell.Offset(0, 1).Value And Not IsEmpty(cell) Then
+                Range(cell, cell.Offset(0, 1)).Merge
+                cell.HorizontalAlignment = xlCenter
                 GoTo MergeSame
             End If
         Next
     ElseIf WorkRange.Columns.count = 1 Then
-        For Each Cell In WorkRange
-            If Cell.Value = Cell.Offset(1, 0).Value And Not IsEmpty(Cell) Then
-                Range(Cell, Cell.Offset(1, 0)).Merge
-                Cell.VerticalAlignment = xlVAlignCenter
+        For Each cell In WorkRange
+            If cell.Value = cell.Offset(1, 0).Value And Not IsEmpty(cell) Then
+                Range(cell, cell.Offset(1, 0)).Merge
+                cell.VerticalAlignment = xlVAlignCenter
                 GoTo MergeSame
             End If
         Next
@@ -730,28 +730,28 @@ MergeSame:
     Application.DisplayAlerts = True
 End Sub
 
-Private Function CountFilesInFolder(FolderPath As String, Optional FileExtension As String = "csv") As Integer
-    Dim Filename As String
+Private Function CountFilesInFolder(folderPath As String, Optional FileExtension As String = "csv") As Integer
+    Dim fileName As String
     Dim intFileCount As Integer
     
     ' Check if the folder path ends with a backslash, if not, add it
-    If Right(FolderPath, 1) <> "\" Then
-        FolderPath = FolderPath & "\"
+    If Right(folderPath, 1) <> "\" Then
+        folderPath = folderPath & "\"
     End If
     
     ' Set the initial file count to 0
     intFileCount = 0
     
     ' Get the first file in the folder
-    Filename = Dir(FolderPath & "*." & FileExtension)
+    fileName = Dir(folderPath & "*." & FileExtension)
     
     ' Loop through all files in the folder
-    Do While Filename <> ""
+    Do While fileName <> ""
         ' Increment the file count
         intFileCount = intFileCount + 1
         
         ' Get the next file in the folder
-        Filename = Dir()
+        fileName = Dir()
     Loop
     
     CountFilesInFolder = intFileCount
@@ -819,7 +819,7 @@ Sub RemovePivotTableSubtotals(pt As PivotTable)
         If pvtField.Orientation = xlColumnField Or pvtField.Orientation = xlRowField Then
             With pvtField
                 .Subtotals = Array(False, False, False, False, False, False, False, False, False, False, False, False)
-                If LCase(pvtField.Name) <> "year" And LCase(pvtField.Name) <> "week" Then
+                If LCase(pvtField.name) <> "year" And LCase(pvtField.name) <> "week" Then
                     .ShowAllItems = True
                 End If
             End With

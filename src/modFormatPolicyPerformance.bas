@@ -17,7 +17,7 @@ Sub FormatPolicyPerformance()
         "C:\Program Files\Microsoft Office\root\Document Themes 16\Office 2013 - 2022 Theme.thmx")
 
     For Each Sht In ActiveWorkbook.Worksheets
-        If Sht.Name <> shtActive.Name Then
+        If Sht.name <> shtActive.name Then
             Sht.Select
             Set rngData = Sht.Range("A1").CurrentRegion
             With rngData

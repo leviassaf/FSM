@@ -13,7 +13,7 @@ End Sub
 
 Sub ActiveReasonsPerActivityInternal()
     Dim shtRawData As Worksheet
-    Dim Lst As ListObject
+    Dim Lst As listObject
     Dim Pvt As PivotTable
     Dim shtPivot As Worksheet
     Dim rngFilteredRanges As Range
@@ -46,14 +46,14 @@ Sub ActiveReasonsPerActivityInternal()
                 Set rngReasonDataNoHeader = GetDataRangeForColumn(shtRawData, .Range("A1").CurrentRegion, "reason")
                 Set rngReasonIdDataNoHeader = GetDataRangeForColumn(shtRawData, .Range("A1").CurrentRegion, "reason_id")
                 Call CleanReasonIDColumn(rngReasonIdDataNoHeader)
-                rngReasonDataNoHeader.FormulaR1C1 = "=VLOOKUP([@[reason_id]],'" & shtPinpointReasonReference.Name & "'!" & rngPinpointReasonReference.Address(RowAbsolute:=True, ColumnAbsolute:=True, ReferenceStyle:=xlR1C1) & ",2,0)"
+                rngReasonDataNoHeader.FormulaR1C1 = "=VLOOKUP([@[reason_id]],'" & shtPinpointReasonReference.name & "'!" & rngPinpointReasonReference.Address(RowAbsolute:=True, ColumnAbsolute:=True, ReferenceStyle:=xlR1C1) & ",2,0)"
             End With
         
             arrVarColumnReason = RangeToArray(rngReasonDataNoHeader)
             Call ArrayToRange(arrVarColumnReason, rngReasonDataNoHeader.Cells(1))
             
             Set shtPivot = Sheets.Add
-            shtPivot.Name = "Pivot Table"
+            shtPivot.name = "Pivot Table"
             
             ActiveWorkbook.PivotCaches.Create(SourceType:=xlDatabase, SourceData:=shtRawData.Range("A1").CurrentRegion, Version:=6). _
                 CreatePivotTable TableDestination:=shtPivot.Cells(3, 1), DefaultVersion:=6
@@ -102,7 +102,7 @@ Sub ActiveReasonsPerActivityInternal()
                 End With
                 
                 For Each pvtItem In .PivotFields("policy_category").PivotItems
-                    If InStr(pvtItem.Name, "test") <> 0 Then
+                    If InStr(pvtItem.name, "test") <> 0 Then
                         pvtItem.Visible = False
                     End If
                 Next pvtItem
@@ -114,12 +114,12 @@ Sub ActiveReasonsPerActivityInternal()
         End If
 End Sub
 
-Private Function GetDataRangeForColumn(Sht As Worksheet, DataRange As Range, ColumnName As String) As Range
+Private Function GetDataRangeForColumn(Sht As Worksheet, dataRange As Range, ColumnName As String) As Range
     Dim lngColIndex As Long
     Dim rngDataNoHeaders As Range
     
-    lngColIndex = GetSheetColumnIndexByTitle(ColumnName, Sht, DataRange.Range("A1"))
-    Set rngDataNoHeaders = Sht.Range(Sht.Cells(2, lngColIndex), Sht.Cells(DataRange.Rows.count, lngColIndex))
+    lngColIndex = GetSheetColumnIndexByTitle(ColumnName, Sht, dataRange.Range("A1"))
+    Set rngDataNoHeaders = Sht.Range(Sht.Cells(2, lngColIndex), Sht.Cells(dataRange.Rows.count, lngColIndex))
     Set GetDataRangeForColumn = rngDataNoHeaders
 
     Set rngDataNoHeaders = Nothing
@@ -165,7 +165,7 @@ Sub CreateCustomerFacingActiveReasons(Pvt As PivotTable, shtSource As Worksheet)
     Dim shtDestination As Worksheet
     Dim lngSourceRowsCount As Long
     Dim lngSourceColumnsCount As Long
-    Dim ListObj As ListObject
+    Dim ListObj As listObject
     Dim strDestDataBodyRangeAddress As String
     
     Set shtDestination = Worksheets.Add
@@ -179,7 +179,7 @@ Sub CreateCustomerFacingActiveReasons(Pvt As PivotTable, shtSource As Worksheet)
     rngDestination.Value = rngSource.Value
 
     With shtDestination
-        .Name = "Active Reasons by Activity"
+        .name = "Active Reasons by Activity"
         Set ListObj = .ListObjects.Add(xlSrcRange, .UsedRange, , xlYes)
         With ListObj
             .TableStyle = "TableStyleLight13"
@@ -213,6 +213,8 @@ Sub PrepareForPrint(Sht As Worksheet)
         .FitToPagesTall = False
         .CenterHeader = "&""-,Bold""&22&A"
         .CenterHorizontally = True
+        .LeftMargin = Application.InchesToPoints(0)
+        .RightMargin = Application.InchesToPoints(0)
     End With
 End Sub
 
